@@ -2,80 +2,73 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>لوحة تحكم عصابة يوسف</title>
+    <title>Gang Control</title>
     <style>
-        body { font-family: Arial; background-color: #1a1a2e; color: white; text-align: center; padding: 20px; }
-        .box { background: #16213e; padding: 20px; border-radius: 15px; width: 80%; margin: auto; box-shadow: 0 0 15px rgba(0,0,0,0.5); }
-        input, select { padding: 10px; margin: 5px; width: 200px; border-radius: 5px; border: none; }
-        button { padding: 10px 15px; background: #0f3460; color: white; border: none; cursor: pointer; border-radius: 5px; margin: 5px; }
-        .btn-red { background: #e94560; }
-        .btn-green { background: #4ecca3; }
-        table { width: 100%; margin-top: 20px; border-collapse: collapse; color: white; }
-        td, th { border: 1px solid #0f3460; padding: 10px; }
+        body { font-family: Arial; background-color: #0b0e14; color: #e0e0e0; text-align: center; padding: 20px; }
+        .box { background: #161b22; padding: 20px; border-radius: 15px; width: 85%; margin: auto; border: 1px solid #30363d; }
+        input, select { padding: 10px; margin: 5px; width: 220px; border-radius: 5px; border: 1px solid #30363d; background: #0d1117; color: white; }
+        button { padding: 10px 20px; background: #238636; color: white; border: none; cursor: pointer; border-radius: 5px; margin: 5px; }
+        .btn-red { background: #da3633; }
+        table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+        td, th { border: 1px solid #30363d; padding: 12px; }
     </style>
 </head>
 <body>
 
 <div class="box">
-    <h1>لوحة تحكم عصابة يوسف</h1>
+    <h1>Gang Control Panel</h1>
     
-    <input type="text" id="searchId" placeholder="ID العضو">
-    <button onclick="showDetails()">عرض سجل العضو</button>
-    <button onclick="showAllMembers()">سجل العصابة الكامل</button>
+    <div>
+        <input type="text" id="mId" placeholder="ID العضو">
+        <input type="text" id="mName" placeholder="اسم العضو">
+        <select id="mRank" onchange="updateTargetInput()">
+            <option value="هيلبر" data-target="100000">هيلبر</option>
+            <option value="فايزر" data-target="100">فايزر</option>
+        </select>
+        <button onclick="saveMember()">حفظ العضو</button>
+    </div>
+
+    <hr style="border-color: #30363d;">
+
+    <h3>إدارة النقاط</h3>
+    <input type="number" id="pointInput" placeholder="أدخل عدد النقاط (مثال: 50 أو -50)">
+    <button onclick="changePoints()">تعديل النقاط</button>
     
     <div id="displayArea"></div>
 </div>
 
 <script>
-    let members = JSON.parse(localStorage.getItem('gangData')) || {
-        "-7373": { name: "يوسف", rank: "HeadVisor", joinDate: "2026-06-01", points: 600, target: 1250, warnings: 0, notes: "" }
-    };
+    let members = JSON.parse(localStorage.getItem('gangData')) || {};
 
-    function showDetails() {
-        const id = document.getElementById('searchId').value;
-        const m = members[id];
-        if (!m) { alert("العضو غير موجود"); return; }
-        const diffDays = Math.floor((new Date() - new Date(m.joinDate)) / (1000 * 60 * 60 * 24));
-        
-        document.getElementById('displayArea').innerHTML = `
-            <h3>سجل العضو: ${m.name}</h3>
-            <table border="1">
-                <tr><th>الرتبة</th><td>${m.rank}</td></tr>
-                <tr><th>الدخول للعصابة</th><td>${m.joinDate} (${diffDays} يوم)</td></tr>
-                <tr><th>النقاط</th><td>${m.points} / ${m.target}</td></tr>
-                <tr><th>الملاحظات</th><td>${m.notes}</td></tr>
-            </table>
-            <button onclick="updatePoints('${id}', 100)">+100</button>
-            <button onclick="updatePoints('${id}', -100)">-100</button>
-            <button class="btn-red" onclick="addWarning('${id}')">تحذير (+1)</button>
-            <input type="text" id="noteInput" placeholder="اكتب ملاحظة...">
-            <button class="btn-green" onclick="saveNote('${id}')">حفظ ملاحظة</button>
-        `;
-    }
-
-    function updatePoints(id, val) {
-        members[id].points += val;
+    function saveMember() {
+        const id = document.getElementById('mId').value;
+        const rankEl = document.getElementById('mRank');
+        members[id] = {
+            name: document.getElementById('mName').value,
+            rank: rankEl.value,
+            target: parseInt(rankEl.options[rankEl.selectedIndex].dataset.target),
+            points: 0
+        };
         localStorage.setItem('gangData', JSON.stringify(members));
-        showDetails();
+        alert("تم حفظ العضو!");
     }
 
-    function addWarning(id) {
-        members[id].warnings++;
-        localStorage.setItem('gangData', JSON.stringify(members));
-        showDetails();
+    function changePoints() {
+        const id = document.getElementById('mId').value;
+        const pts = parseInt(document.getElementById('pointInput').value);
+        if(members[id]) {
+            members[id].points += pts;
+            localStorage.setItem('gangData', JSON.stringify(members));
+            showAll();
+        }
     }
 
-    function saveNote(id) {
-        members[id].notes = document.getElementById('noteInput').value;
-        localStorage.setItem('gangData', JSON.stringify(members));
-        alert("تم حفظ الملاحظة!");
-    }
-
-    function showAllMembers() {
-        let html = "<table><tr><th>ID</th><th>الاسم</th><th>النقاط</th><th>الحالة</th></tr>";
+    function showAll() {
+        let html = "<table><tr><th>ID</th><th>الاسم</th><th>الرتبة</th><th>النقاط</th><th>المطلوب</th><th>الحالة</th></tr>";
         for (let id in members) {
-            let status = members[id].points >= members[id].target ? "✅" : "❌";
-            html += `<tr><td>${id}</td><td>${members[id].name}</td><td>${members[id].points}</td><td>${status}</td></tr>`;
+            let m = members[id];
+            let status = m.points >= m.target ? "✅" : "❌";
+            html += `<tr><td>${id}</td><td>${m.name}</td><td>${m.rank}</td><td>${m.points}</td><td>${m.target}</td><td>${status}</td></tr>`;
         }
         document.getElementById('displayArea').innerHTML = html + "</table>";
     }
