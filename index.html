@@ -2,62 +2,63 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>لوحة تحكم يوسف</title>
+    <title>لوحة تحكم عصابة يوسف</title>
     <style>
         body { font-family: Arial; text-align: center; background-color: #f4f4f4; padding: 20px; }
-        .box { background: white; padding: 20px; border-radius: 10px; width: 400px; margin: auto; }
-        input { padding: 10px; margin: 5px; width: 80%; }
-        button { padding: 10px 20px; background: #28a745; color: white; border: none; cursor: pointer; margin: 5px; }
-        .delete-btn { background: #dc3545; }
+        .box { background: white; padding: 20px; border-radius: 10px; width: 500px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        input, select { padding: 10px; margin: 5px; width: 80%; border-radius: 5px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 5px; margin: 5px; }
+        .success { color: green; font-weight: bold; }
+        .danger { color: red; font-weight: bold; }
+        table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+        td, th { border: 1px solid #ddd; padding: 8px; }
     </style>
 </head>
 <body>
 
 <div class="box">
-    <h1>لوحة تحكم يوسف</h1>
-    <input type="text" id="mId" placeholder="أدخل الـ ID">
-    <button onclick="searchMember()">بحث</button>
-    <div id="result"></div>
+    <h1>لوحة تحكم عصابة يوسف</h1>
+    
+    <h3>البحث عن عضو</h3>
+    <input type="text" id="searchId" placeholder="أدخل ID العضو">
+    <button onclick="showMemberData()">بحث في السجل</button>
+    <div id="resultArea"></div>
+
     <hr>
-    <h3>إدارة الأعضاء</h3>
-    <input type="text" id="addId" placeholder="ID العضو">
-    <input type="text" id="addRank" placeholder="الرتبة">
-    <input type="text" id="addDate" placeholder="تاريخ الدخول (يوم-شهر-سنة)">
-    <button onclick="addMember()">إضافة/تعديل عضو</button>
-    <button class="delete-btn" onclick="deleteMember()">فصل عضو</button>
+    <h3>سجل العصابة الكامل</h3>
+    <button onclick="showAllMembers()">عرض جميع الأعضاء</button>
+    <div id="allMembersArea"></div>
 </div>
 
 <script>
-    let members = JSON.parse(localStorage.getItem('gangMembers')) || {};
+    // قاعدة البيانات - عدل هنا كما تشاء!
+    const members = {
+        "-7373": { name: "يوسف", rank: "مؤسس", joinDate: "2026-06-01", points: 600, target: 500 },
+        "-89": { name: "عضو جديد", rank: "مبتدئ", joinDate: "2026-06-13", points: 100, target: 500 }
+    };
 
-    function searchMember() {
-        const id = document.getElementById('mId').value;
-        const res = document.getElementById('result');
+    function showMemberData() {
+        const id = document.getElementById('searchId').value;
+        const res = document.getElementById('resultArea');
         if (members[id]) {
-            res.innerHTML = `الرتبة: ${members[id].rank}<br>تاريخ الدخول: ${members[id].date}`;
+            const m = members[id];
+            const status = m.points >= m.target ? '<span class="success">مؤهل للترقية (جايب المطلوب)</span>' : '<span class="danger">غير مؤهل (غير جايب المطلوب)</span>';
+            res.innerHTML = `<div>الاسم: ${m.name} | الرتبة: ${m.rank}</div>
+                             <div>تاريخ الدخول: ${m.joinDate}</div>
+                             <div>النقاط: ${m.points} / ${m.target}</div>
+                             <div>الحالة: ${status}</div>`;
         } else {
-            res.innerHTML = "هذا العضو غير موجود.";
+            res.innerHTML = "ID غير موجود.";
         }
     }
 
-    function addMember() {
-        const id = document.getElementById('addId').value;
-        const rank = document.getElementById('addRank').value;
-        const date = document.getElementById('addDate').value;
-        if(id && rank && date) {
-            members[id] = { rank, date };
-            localStorage.setItem('gangMembers', JSON.stringify(members));
-            alert("تم حفظ العضو!");
+    function showAllMembers() {
+        let html = "<table><tr><th>ID</th><th>الاسم</th><th>النقاط</th></tr>";
+        for (let id in members) {
+            html += `<tr><td>${id}</td><td>${members[id].name}</td><td>${members[id].points}</td></tr>`;
         }
-    }
-
-    function deleteMember() {
-        const id = document.getElementById('addId').value;
-        if(members[id]) {
-            delete members[id];
-            localStorage.setItem('gangMembers', JSON.stringify(members));
-            alert("تم فصل العضو.");
-        }
+        html += "</table>";
+        document.getElementById('allMembersArea').innerHTML = html;
     }
 </script>
 </body>
