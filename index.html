@@ -53,6 +53,7 @@
         <input type="number" id="newRankTarget" placeholder="النقاط المطلوبة">
         <button class="btn-add" onclick="manageRank('add')">إضافة رتبة</button>
         <button class="btn-del" onclick="manageRank('del')">حذف رتبة</button>
+        <button class="btn-del" onclick="deleteAllRanks()">حذف جميع الرتب</button>
     </div>
 
     <hr style="border-color: #30363d;">
@@ -104,18 +105,24 @@
         alert("تم تحديث الإعدادات!");
     }
 
+    function deleteAllRanks() {
+        if (confirm("هل أنت متأكد؟ سيتم حذف جميع الرتب الموجودة!")) {
+            ranks = {};
+            localStorage.setItem('gangRanks', JSON.stringify(ranks));
+            updateRankSelect();
+            alert("تم حذف جميع الرتب.");
+        }
+    }
+
     function saveMember() {
         const id = document.getElementById('mId').value;
         const rankEl = document.getElementById('mRankSelect');
         if (!id) return alert("الرجاء كتابة الـ ID");
-        
-        // الحصول على التاريخ الحالي في كل مرة يتم فيها حفظ عضو
         const today = new Date().toLocaleDateString('en-CA'); 
-        
         members[id] = { 
             name: document.getElementById('mName').value, 
             rank: rankEl.value, 
-            target: parseInt(rankEl.options[rankEl.selectedIndex].dataset.target), 
+            target: parseInt(rankEl.options[rankEl.selectedIndex]?.dataset.target || 0), 
             points: 0, 
             joinDate: today 
         };
@@ -178,7 +185,7 @@
         let html = "<table><tr><th>ID</th><th>الاسم</th><th>الرتبة</th><th>تاريخ التوظيف</th><th>النقاط</th><th>المطلوب</th><th>مستوفي</th><th>إجراء</th></tr>";
         for (let id in dataList) {
             let m = dataList[id];
-            let status = m.points >= m.target ? "✅" : "❌";
+            let status = m.points >= (m.target || 0) ? "✅" : "❌";
             html += `<tr><td>${id}</td><td>${m.name} <button onclick="editMemberName('${id}')" style="background:#0969da; border:none; color:white; cursor:pointer; padding:2px 5px; border-radius:3px; font-size:10px;">تعديل</button></td><td>${m.rank}</td><td>${m.joinDate}</td><td>${m.points}</td><td>${m.target}</td><td>${status}</td><td><button class="btn-del" onclick="deleteMember('${id}')">فصل</button></td></tr>`;
         }
         document.getElementById('displayArea').innerHTML = html + "</table>";
