@@ -76,7 +76,6 @@
 </div>
 
 <script>
-    // تحميل البيانات
     let members = JSON.parse(localStorage.getItem('gangData')) || {};
     let ranks = JSON.parse(localStorage.getItem('gangRanks')) || { "Helper": 100000, "Visor": 100 };
     let settings = JSON.parse(localStorage.getItem('gangSettings')) || { title: "لوحة تحكم العصابة", logo: "https://via.placeholder.com/100" };
@@ -102,7 +101,26 @@
         if(l) settings.logo = l;
         localStorage.setItem('gangSettings', JSON.stringify(settings));
         applySettings();
-        alert("تم تحديث إعدادات العصابة!");
+        alert("تم تحديث الإعدادات!");
+    }
+
+    function saveMember() {
+        const id = document.getElementById('mId').value;
+        const rankEl = document.getElementById('mRankSelect');
+        if (!id) return alert("الرجاء كتابة الـ ID");
+        
+        // الحصول على التاريخ الحالي في كل مرة يتم فيها حفظ عضو
+        const today = new Date().toLocaleDateString('en-CA'); 
+        
+        members[id] = { 
+            name: document.getElementById('mName').value, 
+            rank: rankEl.value, 
+            target: parseInt(rankEl.options[rankEl.selectedIndex].dataset.target), 
+            points: 0, 
+            joinDate: today 
+        };
+        localStorage.setItem('gangData', JSON.stringify(members));
+        showAll();
     }
 
     function updateRankSelect() {
@@ -138,15 +156,6 @@
         localStorage.setItem('gangRanks', JSON.stringify(ranks));
         updateRankSelect();
         alert("تم تحديث الرتب!");
-    }
-
-    function saveMember() {
-        const id = document.getElementById('mId').value;
-        const rankEl = document.getElementById('mRankSelect');
-        if (!id) return alert("الرجاء كتابة الـ ID");
-        members[id] = { name: document.getElementById('mName').value, rank: rankEl.value, target: parseInt(rankEl.options[rankEl.selectedIndex].dataset.target), points: 0, joinDate: new Date().toISOString().split('T')[0] };
-        localStorage.setItem('gangData', JSON.stringify(members));
-        showAll();
     }
 
     function changePoints() {
