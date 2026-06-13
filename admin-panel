@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>لوحة التحكم - يوسف</title>
+    <style>
+        body { font-family: Arial; text-align: center; background-color: #f4f4f4; padding: 20px; }
+        .box { background: white; padding: 20px; border-radius: 10px; width: 300px; margin: auto; }
+        input { padding: 10px; width: 80%; margin-bottom: 10px; }
+        button { padding: 10px 20px; background-color: #28a745; color: white; border: none; cursor: pointer; }
+        #result { margin-top: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="box">
+        <h1>لوحة تحكم يوسف</h1>
+        <input type="text" id="memberId" placeholder="أدخل الـ ID هنا (مثلاً -7373)">
+        <button onclick="checkMember()">بحث</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // هنا سنضع البيانات (سأشرح لك كيف)
+        const members = {
+            "-7373": { name: "الاسم هنا", rank: "رتبة مبتدئ", nextRank: "رتبة متقدم", pointsNeeded: 500, lastPromo: "2026-06-01" },
+            // أضف بقية الأعضاء هنا بنفس الطريقة
+        };
+
+        function checkMember() {
+            const id = document.getElementById('memberId').value;
+            const res = document.getElementById('result');
+            if (members[id]) {
+                const m = members[id];
+                res.innerHTML = `الرتبة: ${m.rank}<br>آخر ترقية: ${m.lastPromo}<br>المطلوب للترقية: ${m.pointsNeeded} نقطة`;
+            } else {
+                res.innerHTML = "هذا الـ ID غير موجود!";
+            }
+        }
+    </script>
+</body>
+</html>
