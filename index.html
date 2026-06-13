@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>لوحة تحكم عصابة يوسف</title>
+    <title id="pageTitle">لوحة تحكم العصابة</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #0b0e14; color: #e0e0e0; text-align: center; padding: 20px; }
         .box { background: #161b22; padding: 20px; border-radius: 15px; width: 90%; margin: auto; border: 1px solid #30363d; }
@@ -13,6 +13,7 @@
         .btn-search { background: #0969da; }
         table { width: 100%; margin-top: 20px; border-collapse: collapse; }
         td, th { border: 1px solid #30363d; padding: 10px; font-size: 14px; }
+        #logoImg { width: 100px; height: 100px; border-radius: 50%; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto; }
         #loginScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0b0e14; z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; }
     </style>
 </head>
@@ -25,8 +26,18 @@
 </div>
 
 <div id="mainContent" class="box" style="display: none;">
-    <h1>لوحة تحكم عصابة يوسف</h1>
+    <img id="logoImg" src="https://via.placeholder.com/100" alt="Logo">
+    <h1 id="mainTitle">لوحة تحكم العصابة</h1>
     
+    <div>
+        <h3>تخصيص اللوحة</h3>
+        <input type="text" id="newTitle" placeholder="اسم العصابة الجديد">
+        <input type="text" id="newLogo" placeholder="رابط الصورة">
+        <button class="btn-add" onclick="updateSettings()">حفظ الإعدادات</button>
+    </div>
+    
+    <hr style="border-color: #30363d;">
+
     <div>
         <h3>بحث عن عضو</h3>
         <input type="text" id="searchId" placeholder="أدخل ID للبحث">
@@ -65,18 +76,34 @@
 </div>
 
 <script>
-    function checkPassword() {
-        const pass = document.getElementById('passInput').value;
-        if (pass === "ابو العبد") {
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('mainContent').style.display = 'block';
-        } else {
-            alert("كلمة السر خاطئة!");
-        }
-    }
-
+    // تحميل البيانات
     let members = JSON.parse(localStorage.getItem('gangData')) || {};
     let ranks = JSON.parse(localStorage.getItem('gangRanks')) || { "Helper": 100000, "Visor": 100 };
+    let settings = JSON.parse(localStorage.getItem('gangSettings')) || { title: "لوحة تحكم العصابة", logo: "https://via.placeholder.com/100" };
+
+    function checkPassword() {
+        if (document.getElementById('passInput').value === "ابو العبد") {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+            applySettings();
+        } else { alert("كلمة السر خاطئة!"); }
+    }
+
+    function applySettings() {
+        document.getElementById('mainTitle').innerText = settings.title;
+        document.getElementById('pageTitle').innerText = settings.title;
+        document.getElementById('logoImg').src = settings.logo;
+    }
+
+    function updateSettings() {
+        const t = document.getElementById('newTitle').value;
+        const l = document.getElementById('newLogo').value;
+        if(t) settings.title = t;
+        if(l) settings.logo = l;
+        localStorage.setItem('gangSettings', JSON.stringify(settings));
+        applySettings();
+        alert("تم تحديث إعدادات العصابة!");
+    }
 
     function updateRankSelect() {
         const select = document.getElementById('mRankSelect');
@@ -88,7 +115,7 @@
 
     function editMemberName(id) {
         const newName = prompt("أدخل الاسم الجديد للعضو:", members[id].name);
-        if (newName !== null && newName !== "") {
+        if (newName) {
             members[id].name = newName;
             localStorage.setItem('gangData', JSON.stringify(members));
             showAll();
@@ -97,23 +124,17 @@
 
     function searchMember() {
         const searchId = document.getElementById('searchId').value;
-        if (members[searchId]) {
-            renderTable({ [searchId]: members[searchId] });
-        } else {
-            alert("هذا الـ ID غير موجود");
-        }
+        if (members[searchId]) renderTable({ [searchId]: members[searchId] });
+        else alert("هذا الـ ID غير موجود");
     }
 
     function manageRank(action) {
         const name = document.getElementById('newRankName').value;
-        if (!name) return alert("الرجاء كتابة اسم الرتبة");
+        if (!name) return alert("أدخل اسم الرتبة");
         if (action === 'add') {
             const target = document.getElementById('newRankTarget').value;
-            if (!target) return alert("الرجاء تحديد النقاط");
             ranks[name] = parseInt(target);
-        } else {
-            delete ranks[name];
-        }
+        } else delete ranks[name];
         localStorage.setItem('gangRanks', JSON.stringify(ranks));
         updateRankSelect();
         alert("تم تحديث الرتب!");
@@ -123,13 +144,7 @@
         const id = document.getElementById('mId').value;
         const rankEl = document.getElementById('mRankSelect');
         if (!id) return alert("الرجاء كتابة الـ ID");
-        members[id] = {
-            name: document.getElementById('mName').value,
-            rank: rankEl.value,
-            target: parseInt(rankEl.options[rankEl.selectedIndex].dataset.target),
-            points: 0,
-            joinDate: new Date().toISOString().split('T')[0]
-        };
+        members[id] = { name: document.getElementById('mName').value, rank: rankEl.value, target: parseInt(rankEl.options[rankEl.selectedIndex].dataset.target), points: 0, joinDate: new Date().toISOString().split('T')[0] };
         localStorage.setItem('gangData', JSON.stringify(members));
         showAll();
     }
@@ -141,9 +156,7 @@
             members[id].points += pts;
             localStorage.setItem('gangData', JSON.stringify(members));
             showAll();
-        } else {
-            alert("العضو غير موجود");
-        }
+        } else alert("العضو غير موجود");
     }
 
     function deleteMember(id) {
@@ -157,16 +170,7 @@
         for (let id in dataList) {
             let m = dataList[id];
             let status = m.points >= m.target ? "✅" : "❌";
-            html += `<tr>
-                        <td>${id}</td>
-                        <td>${m.name} <button onclick="editMemberName('${id}')" style="background:#0969da; border:none; color:white; cursor:pointer; padding:2px 5px; border-radius:3px; font-size:10px;">تعديل</button></td>
-                        <td>${m.rank}</td>
-                        <td>${m.joinDate}</td>
-                        <td>${m.points}</td>
-                        <td>${m.target}</td>
-                        <td>${status}</td>
-                        <td><button class="btn-del" onclick="deleteMember('${id}')">فصل</button></td>
-                     </tr>`;
+            html += `<tr><td>${id}</td><td>${m.name} <button onclick="editMemberName('${id}')" style="background:#0969da; border:none; color:white; cursor:pointer; padding:2px 5px; border-radius:3px; font-size:10px;">تعديل</button></td><td>${m.rank}</td><td>${m.joinDate}</td><td>${m.points}</td><td>${m.target}</td><td>${status}</td><td><button class="btn-del" onclick="deleteMember('${id}')">فصل</button></td></tr>`;
         }
         document.getElementById('displayArea').innerHTML = html + "</table>";
     }
@@ -175,6 +179,7 @@
     
     updateRankSelect();
     showAll();
+    applySettings();
 </script>
 </body>
 </html>
