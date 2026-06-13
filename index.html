@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <title>لوحة تحكم عصابة يوسف</title>
     <style>
-        body { font-family: Arial; text-align: center; background-color: #f4f4f4; padding: 20px; }
-        .box { background: white; padding: 20px; border-radius: 10px; width: 600px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        input, select { padding: 10px; margin: 5px; width: 80%; border-radius: 5px; border: 1px solid #ccc; }
-        button { padding: 10px 15px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 5px; margin: 5px; }
-        .btn-red { background: #dc3545; }
-        table { width: 100%; margin-top: 20px; border-collapse: collapse; }
-        td, th { border: 1px solid #ddd; padding: 10px; }
+        body { font-family: Arial; background-color: #1a1a2e; color: white; text-align: center; padding: 20px; }
+        .box { background: #16213e; padding: 20px; border-radius: 15px; width: 80%; margin: auto; box-shadow: 0 0 15px rgba(0,0,0,0.5); }
+        input, select { padding: 10px; margin: 5px; width: 200px; border-radius: 5px; border: none; }
+        button { padding: 10px 15px; background: #0f3460; color: white; border: none; cursor: pointer; border-radius: 5px; margin: 5px; }
+        .btn-red { background: #e94560; }
+        .btn-green { background: #4ecca3; }
+        table { width: 100%; margin-top: 20px; border-collapse: collapse; color: white; }
+        td, th { border: 1px solid #0f3460; padding: 10px; }
     </style>
 </head>
 <body>
@@ -18,58 +19,44 @@
 <div class="box">
     <h1>لوحة تحكم عصابة يوسف</h1>
     
-    <!-- قسم الإدارة -->
-    <h3>إدارة العصابة</h3>
-    <input type="text" id="mId" placeholder="ID العضو">
-    <input type="text" id="mName" placeholder="الاسم">
-    <select id="mRank">
-        <option>مبتدئ</option><option>هيلبر</option><option>فايزر</option>
-    </select>
-    <button onclick="addOrUpdateMember()">حفظ/إضافة عضو</button>
-    <button class="btn-red" onclick="removeMember()">فصل عضو</button>
-
-    <hr>
-    <h3>بحث في السجل</h3>
-    <input type="text" id="searchId" placeholder="أدخل ID العضو">
-    <button onclick="showDetails()">عرض السجل الكامل</button>
-    <div id="detailsArea"></div>
+    <input type="text" id="searchId" placeholder="ID العضو">
+    <button onclick="showDetails()">عرض سجل العضو</button>
+    <button onclick="showAllMembers()">سجل العصابة الكامل</button>
+    
+    <div id="displayArea"></div>
 </div>
 
 <script>
-    // قاعدة البيانات (يمكنك إضافة رتب هنا)
     let members = JSON.parse(localStorage.getItem('gangData')) || {
-        "-7373": { name: "يوسف", rank: "مؤسس", joinDate: "2026-06-01", points: 600, target: 500, warnings: 0, notes: "" }
+        "-7373": { name: "يوسف", rank: "HeadVisor", joinDate: "2026-06-01", points: 600, target: 1250, warnings: 0, notes: "" }
     };
-
-    function addOrUpdateMember() {
-        const id = document.getElementById('mId').value;
-        if (!members[id]) {
-            members[id] = { name: document.getElementById('mName').value, rank: document.getElementById('mRank').value, joinDate: new Date().toISOString().split('T')[0], points: 0, target: 500, warnings: 0, notes: "" };
-        } else {
-            members[id].rank = document.getElementById('mRank').value;
-        }
-        localStorage.setItem('gangData', JSON.stringify(members));
-        alert("تم الحفظ!");
-    }
 
     function showDetails() {
         const id = document.getElementById('searchId').value;
         const m = members[id];
-        if (!m) { alert("غير موجود"); return; }
-        
+        if (!m) { alert("العضو غير موجود"); return; }
         const diffDays = Math.floor((new Date() - new Date(m.joinDate)) / (1000 * 60 * 60 * 24));
-        const status = m.points >= m.target ? "✅ جايب المطلوب" : "❌ مش جايب المطلوب";
         
-        document.getElementById('detailsArea').innerHTML = `
+        document.getElementById('displayArea').innerHTML = `
+            <h3>سجل العضو: ${m.name}</h3>
             <table border="1">
-                <tr><th>الاسم</th><td>${m.name}</td></tr>
-                <tr><th>المدة بالعصابة</th><td>${diffDays} يوم</td></tr>
                 <tr><th>الرتبة</th><td>${m.rank}</td></tr>
-                <tr><th>النقاط</th><td>${m.points} / ${m.target} (${status})</td></tr>
-                <tr><th>تحذيرات</th><td>${m.warnings}</td></tr>
+                <tr><th>الدخول للعصابة</th><td>${m.joinDate} (${diffDays} يوم)</td></tr>
+                <tr><th>النقاط</th><td>${m.points} / ${m.target}</td></tr>
+                <tr><th>الملاحظات</th><td>${m.notes}</td></tr>
             </table>
-            <button onclick="addWarning('${id}')" class="btn-red">تحذير (+1)</button>
+            <button onclick="updatePoints('${id}', 100)">+100</button>
+            <button onclick="updatePoints('${id}', -100)">-100</button>
+            <button class="btn-red" onclick="addWarning('${id}')">تحذير (+1)</button>
+            <input type="text" id="noteInput" placeholder="اكتب ملاحظة...">
+            <button class="btn-green" onclick="saveNote('${id}')">حفظ ملاحظة</button>
         `;
+    }
+
+    function updatePoints(id, val) {
+        members[id].points += val;
+        localStorage.setItem('gangData', JSON.stringify(members));
+        showDetails();
     }
 
     function addWarning(id) {
@@ -78,11 +65,19 @@
         showDetails();
     }
 
-    function removeMember() {
-        const id = document.getElementById('mId').value;
-        delete members[id];
+    function saveNote(id) {
+        members[id].notes = document.getElementById('noteInput').value;
         localStorage.setItem('gangData', JSON.stringify(members));
-        alert("تم الفصل!");
+        alert("تم حفظ الملاحظة!");
+    }
+
+    function showAllMembers() {
+        let html = "<table><tr><th>ID</th><th>الاسم</th><th>النقاط</th><th>الحالة</th></tr>";
+        for (let id in members) {
+            let status = members[id].points >= members[id].target ? "✅" : "❌";
+            html += `<tr><td>${id}</td><td>${members[id].name}</td><td>${members[id].points}</td><td>${status}</td></tr>`;
+        }
+        document.getElementById('displayArea').innerHTML = html + "</table>";
     }
 </script>
 </body>
