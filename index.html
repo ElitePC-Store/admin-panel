@@ -2,41 +2,63 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>لوحة التحكم - يوسف</title>
+    <title>لوحة تحكم يوسف</title>
     <style>
         body { font-family: Arial; text-align: center; background-color: #f4f4f4; padding: 20px; }
-        .box { background: white; padding: 20px; border-radius: 10px; width: 300px; margin: auto; }
-        input { padding: 10px; width: 80%; margin-bottom: 10px; }
-        button { padding: 10px 20px; background-color: #28a745; color: white; border: none; cursor: pointer; }
-        #result { margin-top: 20px; font-weight: bold; }
+        .box { background: white; padding: 20px; border-radius: 10px; width: 400px; margin: auto; }
+        input { padding: 10px; margin: 5px; width: 80%; }
+        button { padding: 10px 20px; background: #28a745; color: white; border: none; cursor: pointer; margin: 5px; }
+        .delete-btn { background: #dc3545; }
     </style>
 </head>
 <body>
 
-    <div class="box">
-        <h1>لوحة تحكم يوسف</h1>
-        <input type="text" id="memberId" placeholder="أدخل الـ ID هنا (مثلاً -7373)">
-        <button onclick="checkMember()">بحث</button>
-        <div id="result"></div>
-    </div>
+<div class="box">
+    <h1>لوحة تحكم يوسف</h1>
+    <input type="text" id="mId" placeholder="أدخل الـ ID">
+    <button onclick="searchMember()">بحث</button>
+    <div id="result"></div>
+    <hr>
+    <h3>إدارة الأعضاء</h3>
+    <input type="text" id="addId" placeholder="ID العضو">
+    <input type="text" id="addRank" placeholder="الرتبة">
+    <input type="text" id="addDate" placeholder="تاريخ الدخول (يوم-شهر-سنة)">
+    <button onclick="addMember()">إضافة/تعديل عضو</button>
+    <button class="delete-btn" onclick="deleteMember()">فصل عضو</button>
+</div>
 
-    <script>
-        // هنا سنضع البيانات (سأشرح لك كيف)
-        const members = {
-            "-7373": { name: "الاسم هنا", rank: "رتبة مبتدئ", nextRank: "رتبة متقدم", pointsNeeded: 500, lastPromo: "2026-06-01" },
-            // أضف بقية الأعضاء هنا بنفس الطريقة
-        };
+<script>
+    let members = JSON.parse(localStorage.getItem('gangMembers')) || {};
 
-        function checkMember() {
-            const id = document.getElementById('memberId').value;
-            const res = document.getElementById('result');
-            if (members[id]) {
-                const m = members[id];
-                res.innerHTML = `الرتبة: ${m.rank}<br>آخر ترقية: ${m.lastPromo}<br>المطلوب للترقية: ${m.pointsNeeded} نقطة`;
-            } else {
-                res.innerHTML = "هذا الـ ID غير موجود!";
-            }
+    function searchMember() {
+        const id = document.getElementById('mId').value;
+        const res = document.getElementById('result');
+        if (members[id]) {
+            res.innerHTML = `الرتبة: ${members[id].rank}<br>تاريخ الدخول: ${members[id].date}`;
+        } else {
+            res.innerHTML = "هذا العضو غير موجود.";
         }
-    </script>
+    }
+
+    function addMember() {
+        const id = document.getElementById('addId').value;
+        const rank = document.getElementById('addRank').value;
+        const date = document.getElementById('addDate').value;
+        if(id && rank && date) {
+            members[id] = { rank, date };
+            localStorage.setItem('gangMembers', JSON.stringify(members));
+            alert("تم حفظ العضو!");
+        }
+    }
+
+    function deleteMember() {
+        const id = document.getElementById('addId').value;
+        if(members[id]) {
+            delete members[id];
+            localStorage.setItem('gangMembers', JSON.stringify(members));
+            alert("تم فصل العضو.");
+        }
+    }
+</script>
 </body>
 </html>
