@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>Gang Control Panel</title>
+    <title>لوحة تحكم عصابة يوسف</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #0b0e14; color: #e0e0e0; text-align: center; padding: 20px; }
         .box { background: #161b22; padding: 20px; border-radius: 15px; width: 90%; margin: auto; border: 1px solid #30363d; }
@@ -25,7 +25,7 @@
 </div>
 
 <div id="mainContent" class="box" style="display: none;">
-    <h1>Gang Control Panel</h1>
+    <h1>لوحة تحكم عصابة يوسف</h1>
     
     <div>
         <h3>بحث عن عضو</h3>
@@ -83,6 +83,15 @@
         select.innerHTML = "";
         for (let r in ranks) {
             select.innerHTML += `<option value="${r}" data-target="${ranks[r]}">${r}</option>`;
+        }
+    }
+
+    function editMemberName(id) {
+        const newName = prompt("أدخل الاسم الجديد للعضو:", members[id].name);
+        if (newName !== null && newName !== "") {
+            members[id].name = newName;
+            localStorage.setItem('gangData', JSON.stringify(members));
+            showAll();
         }
     }
 
@@ -148,8 +157,16 @@
         for (let id in dataList) {
             let m = dataList[id];
             let status = m.points >= m.target ? "✅" : "❌";
-            html += `<tr><td>${id}</td><td>${m.name}</td><td>${m.rank}</td><td>${m.joinDate}</td><td>${m.points}</td><td>${m.target}</td><td>${status}</td>
-                     <td><button class="btn-del" onclick="deleteMember('${id}')">فصل</button></td></tr>`;
+            html += `<tr>
+                        <td>${id}</td>
+                        <td>${m.name} <button onclick="editMemberName('${id}')" style="background:#0969da; border:none; color:white; cursor:pointer; padding:2px 5px; border-radius:3px; font-size:10px;">تعديل</button></td>
+                        <td>${m.rank}</td>
+                        <td>${m.joinDate}</td>
+                        <td>${m.points}</td>
+                        <td>${m.target}</td>
+                        <td>${status}</td>
+                        <td><button class="btn-del" onclick="deleteMember('${id}')">فصل</button></td>
+                     </tr>`;
         }
         document.getElementById('displayArea').innerHTML = html + "</table>";
     }
