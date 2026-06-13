@@ -7,8 +7,9 @@
         body { font-family: Arial, sans-serif; background-color: #0b0e14; color: #e0e0e0; text-align: center; padding: 20px; }
         .box { background: #161b22; padding: 20px; border-radius: 15px; width: 90%; margin: auto; border: 1px solid #30363d; }
         input, select { padding: 10px; margin: 5px; width: 150px; border-radius: 5px; border: 1px solid #30363d; background: #0d1117; color: white; }
-        button { padding: 8px 15px; background: #238636; color: white; border: none; cursor: pointer; border-radius: 5px; margin: 5px; }
-        .btn-red { background: #da3633; }
+        button { padding: 8px 15px; color: white; border: none; cursor: pointer; border-radius: 5px; margin: 5px; }
+        .btn-add { background: #238636; }
+        .btn-del { background: #da3633; }
         table { width: 100%; margin-top: 20px; border-collapse: collapse; }
         td, th { border: 1px solid #30363d; padding: 10px; font-size: 14px; }
     </style>
@@ -21,8 +22,9 @@
     <div>
         <h3>إدارة الرتب</h3>
         <input type="text" id="newRankName" placeholder="اسم الرتبة">
-        <input type="number" id="newRankTarget" placeholder="النقاط المطلوبة">
-        <button onclick="addRank()">إضافة رتبة</button>
+        <input type="number" id="newRankTarget" placeholder="النقاط المطلوبة (للإضافة)">
+        <button class="btn-add" onclick="manageRank('add')">إضافة رتبة</button>
+        <button class="btn-del" onclick="manageRank('del')">حذف رتبة</button>
     </div>
 
     <hr style="border-color: #30363d;">
@@ -32,14 +34,14 @@
         <input type="text" id="mId" placeholder="ID العضو">
         <input type="text" id="mName" placeholder="اسم العضو">
         <select id="mRankSelect"></select>
-        <button onclick="saveMember()">حفظ العضو</button>
+        <button class="btn-add" onclick="saveMember()">حفظ العضو</button>
     </div>
 
     <hr style="border-color: #30363d;">
 
     <h3>إدارة النقاط</h3>
     <input type="number" id="pointInput" placeholder="النقاط (مثال: 50)">
-    <button onclick="changePoints()">تحديث النقاط</button>
+    <button class="btn-add" onclick="changePoints()">تحديث النقاط</button>
     
     <div id="displayArea"></div>
 </div>
@@ -56,15 +58,25 @@
         }
     }
 
-    function addRank() {
+    function manageRank(action) {
         const name = document.getElementById('newRankName').value;
-        const target = document.getElementById('newRankTarget').value;
-        if(name && target) {
+        if (!name) return alert("الرجاء كتابة اسم الرتبة");
+
+        if (action === 'add') {
+            const target = document.getElementById('newRankTarget').value;
+            if (!target) return alert("الرجاء تحديد النقاط المطلوبة");
             ranks[name] = parseInt(target);
-            localStorage.setItem('gangRanks', JSON.stringify(ranks));
-            updateRankSelect();
             alert("تم إضافة الرتبة!");
+        } else {
+            if (ranks[name]) {
+                delete ranks[name];
+                alert("تم حذف الرتبة!");
+            } else {
+                alert("الرتبة غير موجودة");
+            }
         }
+        localStorage.setItem('gangRanks', JSON.stringify(ranks));
+        updateRankSelect();
     }
 
     function saveMember() {
@@ -104,7 +116,7 @@
             let m = members[id];
             let status = m.points >= m.target ? "✅" : "❌";
             html += `<tr><td>${id}</td><td>${m.name}</td><td>${m.rank}</td><td>${m.joinDate}</td><td>${m.points}</td><td>${m.target}</td><td>${status}</td>
-                     <td><button class="btn-red" onclick="deleteMember('${id}')">فصل</button></td></tr>`;
+                     <td><button class="btn-del" onclick="deleteMember('${id}')">فصل</button></td></tr>`;
         }
         document.getElementById('displayArea').innerHTML = html + "</table>";
     }
