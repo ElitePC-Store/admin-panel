@@ -5,13 +5,12 @@
     <title>لوحة تحكم عصابة يوسف</title>
     <style>
         body { font-family: Arial; text-align: center; background-color: #f4f4f4; padding: 20px; }
-        .box { background: white; padding: 20px; border-radius: 10px; width: 500px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .box { background: white; padding: 20px; border-radius: 10px; width: 600px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         input, select { padding: 10px; margin: 5px; width: 80%; border-radius: 5px; border: 1px solid #ccc; }
-        button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 5px; margin: 5px; }
-        .success { color: green; font-weight: bold; }
-        .danger { color: red; font-weight: bold; }
+        button { padding: 10px 15px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 5px; margin: 5px; }
+        .btn-red { background: #dc3545; }
         table { width: 100%; margin-top: 20px; border-collapse: collapse; }
-        td, th { border: 1px solid #ddd; padding: 8px; }
+        td, th { border: 1px solid #ddd; padding: 10px; }
     </style>
 </head>
 <body>
@@ -19,46 +18,71 @@
 <div class="box">
     <h1>لوحة تحكم عصابة يوسف</h1>
     
-    <h3>البحث عن عضو</h3>
-    <input type="text" id="searchId" placeholder="أدخل ID العضو">
-    <button onclick="showMemberData()">بحث في السجل</button>
-    <div id="resultArea"></div>
+    <!-- قسم الإدارة -->
+    <h3>إدارة العصابة</h3>
+    <input type="text" id="mId" placeholder="ID العضو">
+    <input type="text" id="mName" placeholder="الاسم">
+    <select id="mRank">
+        <option>مبتدئ</option><option>هيلبر</option><option>فايزر</option>
+    </select>
+    <button onclick="addOrUpdateMember()">حفظ/إضافة عضو</button>
+    <button class="btn-red" onclick="removeMember()">فصل عضو</button>
 
     <hr>
-    <h3>سجل العصابة الكامل</h3>
-    <button onclick="showAllMembers()">عرض جميع الأعضاء</button>
-    <div id="allMembersArea"></div>
+    <h3>بحث في السجل</h3>
+    <input type="text" id="searchId" placeholder="أدخل ID العضو">
+    <button onclick="showDetails()">عرض السجل الكامل</button>
+    <div id="detailsArea"></div>
 </div>
 
 <script>
-    // قاعدة البيانات - عدل هنا كما تشاء!
-    const members = {
-        "-7373": { name: "يوسف", rank: "مؤسس", joinDate: "2026-06-01", points: 600, target: 500 },
-        "-89": { name: "عضو جديد", rank: "مبتدئ", joinDate: "2026-06-13", points: 100, target: 500 }
+    // قاعدة البيانات (يمكنك إضافة رتب هنا)
+    let members = JSON.parse(localStorage.getItem('gangData')) || {
+        "-7373": { name: "يوسف", rank: "مؤسس", joinDate: "2026-06-01", points: 600, target: 500, warnings: 0, notes: "" }
     };
 
-    function showMemberData() {
-        const id = document.getElementById('searchId').value;
-        const res = document.getElementById('resultArea');
-        if (members[id]) {
-            const m = members[id];
-            const status = m.points >= m.target ? '<span class="success">مؤهل للترقية (جايب المطلوب)</span>' : '<span class="danger">غير مؤهل (غير جايب المطلوب)</span>';
-            res.innerHTML = `<div>الاسم: ${m.name} | الرتبة: ${m.rank}</div>
-                             <div>تاريخ الدخول: ${m.joinDate}</div>
-                             <div>النقاط: ${m.points} / ${m.target}</div>
-                             <div>الحالة: ${status}</div>`;
+    function addOrUpdateMember() {
+        const id = document.getElementById('mId').value;
+        if (!members[id]) {
+            members[id] = { name: document.getElementById('mName').value, rank: document.getElementById('mRank').value, joinDate: new Date().toISOString().split('T')[0], points: 0, target: 500, warnings: 0, notes: "" };
         } else {
-            res.innerHTML = "ID غير موجود.";
+            members[id].rank = document.getElementById('mRank').value;
         }
+        localStorage.setItem('gangData', JSON.stringify(members));
+        alert("تم الحفظ!");
     }
 
-    function showAllMembers() {
-        let html = "<table><tr><th>ID</th><th>الاسم</th><th>النقاط</th></tr>";
-        for (let id in members) {
-            html += `<tr><td>${id}</td><td>${members[id].name}</td><td>${members[id].points}</td></tr>`;
-        }
-        html += "</table>";
-        document.getElementById('allMembersArea').innerHTML = html;
+    function showDetails() {
+        const id = document.getElementById('searchId').value;
+        const m = members[id];
+        if (!m) { alert("غير موجود"); return; }
+        
+        const diffDays = Math.floor((new Date() - new Date(m.joinDate)) / (1000 * 60 * 60 * 24));
+        const status = m.points >= m.target ? "✅ جايب المطلوب" : "❌ مش جايب المطلوب";
+        
+        document.getElementById('detailsArea').innerHTML = `
+            <table border="1">
+                <tr><th>الاسم</th><td>${m.name}</td></tr>
+                <tr><th>المدة بالعصابة</th><td>${diffDays} يوم</td></tr>
+                <tr><th>الرتبة</th><td>${m.rank}</td></tr>
+                <tr><th>النقاط</th><td>${m.points} / ${m.target} (${status})</td></tr>
+                <tr><th>تحذيرات</th><td>${m.warnings}</td></tr>
+            </table>
+            <button onclick="addWarning('${id}')" class="btn-red">تحذير (+1)</button>
+        `;
+    }
+
+    function addWarning(id) {
+        members[id].warnings++;
+        localStorage.setItem('gangData', JSON.stringify(members));
+        showDetails();
+    }
+
+    function removeMember() {
+        const id = document.getElementById('mId').value;
+        delete members[id];
+        localStorage.setItem('gangData', JSON.stringify(members));
+        alert("تم الفصل!");
     }
 </script>
 </body>
