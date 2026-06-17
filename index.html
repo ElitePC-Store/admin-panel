@@ -13,6 +13,8 @@
         .btn-search { background: #0969da; }
         table { width: 100%; margin-top: 20px; border-collapse: collapse; }
         td, th { border: 1px solid #30363d; padding: 10px; font-size: 14px; }
+        /* تعديل عرض خانة الملاحظات داخل الجدول */
+        .notes-input { width: 90% !important; min-width: 150px; background: #0d1117; color: white; border: 1px solid #30363d; padding: 8px; border-radius: 4px; }
         #logoImg { width: 100px; height: 100px; border-radius: 50%; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto; }
         #loginScreen, #rankModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; display: none; flex-direction: column; justify-content: center; align-items: center; }
         .modal-content { background: #161b22; padding: 25px; border-radius: 15px; border: 1px solid #30363d; }
@@ -156,7 +158,6 @@
         showAll();
     }
 
-    // هذه دالة حفظ الملاحظات
     function updateNote(id, val) {
         members[id].notes = val;
         localStorage.setItem('gangData', JSON.stringify(members));
@@ -175,7 +176,7 @@
                 <td>${m.rank} <button onclick="openRankModal('${id}')" style="background:#0969da; border:none; color:white; cursor:pointer; padding:2px 5px; border-radius:3px; font-size:10px;">تغيير</button></td>
                 <td>${m.joinDate}</td><td>${m.promoDate || m.joinDate}</td><td>${diffDays}</td>
                 <td>${m.points}</td><td>${m.target}</td><td>${status}</td>
-                <td><input type="text" value="${m.notes || ''}" onchange="updateNote('${id}', this.value)" style="width:100px; background:#0d1117; color:white; border:1px solid #30363d; padding:5px;"></td>
+                <td><input type="text" class="notes-input" value="${m.notes || ''}" onchange="updateNote('${id}', this.value)" placeholder="أكتب ملاحظة..."></td>
                 <td><button class="btn-del" onclick="deleteMember('${id}')">فصل</button></td></tr>`;
         }
         document.getElementById('displayArea').innerHTML = html + "</table>";
