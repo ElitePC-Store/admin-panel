@@ -13,7 +13,6 @@
         .btn-search { background: #0969da; }
         table { width: 100%; margin-top: 20px; border-collapse: collapse; }
         td, th { border: 1px solid #30363d; padding: 10px; font-size: 14px; }
-        /* تعديل عرض خانة الملاحظات داخل الجدول */
         .notes-input { width: 90% !important; min-width: 150px; background: #0d1117; color: white; border: 1px solid #30363d; padding: 8px; border-radius: 4px; }
         #logoImg { width: 100px; height: 100px; border-radius: 50%; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto; }
         #loginScreen, #rankModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; display: none; flex-direction: column; justify-content: center; align-items: center; }
@@ -88,6 +87,11 @@
     <button class="btn-add" onclick="changePoints()">تحديث النقاط</button>
     
     <div id="displayArea"></div>
+
+    <!-- قسم سجل العمليات الجديد -->
+    <hr style="border-color: #30363d;">
+    <h3>سجل العمليات (Logs)</h3>
+    <div id="logArea" style="text-align: right; max-height: 200px; overflow-y: auto; background: #0d1117; padding: 10px; border-radius: 5px; font-size: 12px; color: #8b949e;"></div>
 </div>
 
 <script>
@@ -96,12 +100,27 @@
     let settings = JSON.parse(localStorage.getItem('gangSettings')) || { title: "لوحة تحكم العصابة", logo: "https://via.placeholder.com/100" };
     let currentEditingId = null;
 
+    // وظيفة تسجيل العمليات
+    function addLog(msg) {
+        let logs = JSON.parse(localStorage.getItem('gangLogs')) || [];
+        let time = new Date().toLocaleTimeString();
+        logs.unshift(`[${time}] ${msg}`);
+        if (logs.length > 20) logs.pop();
+        localStorage.setItem('gangLogs', JSON.stringify(logs));
+        renderLogs();
+    }
+
+    function renderLogs() {
+        document.getElementById('logArea').innerHTML = (JSON.parse(localStorage.getItem('gangLogs')) || []).join('<br>');
+    }
+
     function checkPassword() {
         if (document.getElementById('passInput').value === "ابو العبد") {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('mainContent').style.display = 'block';
             applySettings();
             showAll();
+            renderLogs();
         } else { alert("كلمة السر خاطئة!"); }
     }
 
@@ -123,9 +142,11 @@
 
     function confirmRankChange() {
         const newRank = document.getElementById("selectNewRank").value;
+        const oldRank = members[currentEditingId].rank;
         members[currentEditingId].rank = newRank;
         members[currentEditingId].promoDate = new Date().toLocaleDateString('en-CA'); 
         localStorage.setItem('gangData', JSON.stringify(members));
+        addLog(`تغيير رتبة ${currentEditingId}: من ${oldRank} إلى ${newRank}`);
         showAll();
         closeModal();
     }
@@ -137,6 +158,7 @@
         if(l) settings.logo = l;
         localStorage.setItem('gangSettings', JSON.stringify(settings));
         applySettings();
+        addLog("تم تحديث إعدادات اللوحة");
         alert("تم تحديث الإعدادات!");
     }
 
@@ -155,12 +177,14 @@
             notes: ""
         };
         localStorage.setItem('gangData', JSON.stringify(members));
+        addLog(`إضافة عضو جديد: ${id}`);
         showAll();
     }
 
     function updateNote(id, val) {
         members[id].notes = val;
         localStorage.setItem('gangData', JSON.stringify(members));
+        addLog(`تحديث ملاحظة: ${id}`);
     }
 
     function renderTable(dataList) {
@@ -208,6 +232,7 @@
         if (newName) {
             members[id].name = newName;
             localStorage.setItem('gangData', JSON.stringify(members));
+            addLog(`تعديل اسم: ${id}`);
             showAll();
         }
     }
@@ -227,6 +252,7 @@
         } else delete ranks[name];
         localStorage.setItem('gangRanks', JSON.stringify(ranks));
         updateRankSelect();
+        addLog(`تعديل رتب: ${action === 'add' ? 'إضافة' : 'حذف'} ${name}`);
         alert("تم تحديث الرتب!");
     }
 
@@ -236,6 +262,7 @@
         if(members[id]) {
             members[id].points += pts;
             localStorage.setItem('gangData', JSON.stringify(members));
+            addLog(`تعديل نقاط: ${id} بمقدار ${pts}`);
             showAll();
         } else alert("العضو غير موجود");
     }
@@ -244,6 +271,7 @@
         if(confirm("هل أنت متأكد من فصل هذا العضو؟")) {
             delete members[id];
             localStorage.setItem('gangData', JSON.stringify(members));
+            addLog(`فصل عضو: ${id}`);
             showAll();
         }
     }
@@ -253,6 +281,7 @@
             ranks = {};
             localStorage.setItem('gangRanks', JSON.stringify(ranks));
             updateRankSelect();
+            addLog("حذف جميع الرتب");
             alert("تم حذف جميع الرتب.");
         }
     }
