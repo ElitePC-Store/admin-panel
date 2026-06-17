@@ -29,13 +29,12 @@
     <img id="logoImg" src="https://via.placeholder.com/100" alt="Logo">
     <h1 id="mainTitle">لوحة تحكم العصابة</h1>
     
-    <!-- باقي الأقسام كما هي -->
     <div>
         <h3>بحث وتصفية الأعضاء</h3>
         <input type="text" id="searchId" placeholder="ID للبحث">
         <button class="btn-search" onclick="searchMember()">بحث</button>
         <select id="filterRankSelect"></select>
-        <button class="btn-search" onclick="filterByRank()">فلترة</button>
+        <button class="btn-search" onclick="filterByRank()">فلترة بالرتبة</button>
         <button onclick="showAll()">إظهار الكل</button>
     </div>
 
@@ -54,7 +53,7 @@
 
 <script>
     let members = JSON.parse(localStorage.getItem('gangData')) || {};
-    let ranks = JSON.parse(localStorage.getItem('gangRanks')) || { "Helper": 100000 };
+    let ranks = JSON.parse(localStorage.getItem('gangRanks')) || { "Helper": 100000, "Visor": 100 };
     let settings = JSON.parse(localStorage.getItem('gangSettings')) || { title: "لوحة تحكم العصابة", logo: "https://via.placeholder.com/100" };
 
     function checkPassword() {
@@ -77,7 +76,7 @@
             target: parseInt(rankEl.options[rankEl.selectedIndex]?.dataset.target || 0), 
             points: 0, 
             joinDate: today,
-            promoDate: today // تاريخ الترقية الابتدائي هو نفس تاريخ التوظيف
+            promoDate: today 
         };
         localStorage.setItem('gangData', JSON.stringify(members));
         showAll();
@@ -87,7 +86,7 @@
         const newRank = prompt("أدخل الرتبة الجديدة:");
         if (newRank && ranks.hasOwnProperty(newRank)) {
             members[id].rank = newRank;
-            members[id].promoDate = new Date().toLocaleDateString('en-CA'); // تحديث تاريخ الترقية
+            members[id].promoDate = new Date().toLocaleDateString('en-CA'); 
             localStorage.setItem('gangData', JSON.stringify(members));
             showAll();
         } else { alert("الرتبة غير موجودة!"); }
@@ -97,13 +96,12 @@
         let html = "<table><tr><th>ID</th><th>الاسم</th><th>الرتبة</th><th>تاريخ التوظيف</th><th>تاريخ الترقية</th><th>الأيام في العصابة</th><th>النقاط</th><th>إجراء</th></tr>";
         for (let id in dataList) {
             let m = dataList[id];
-            // حساب الأيام
             let join = new Date(m.joinDate);
             let diffDays = Math.floor((new Date() - join) / (1000 * 60 * 60 * 24));
             
             html += `<tr><td>${id}</td><td>${m.name}</td>
                 <td>${m.rank} <button onclick="changeRank('${id}')" style="background:#0969da; border:none; color:white; cursor:pointer; padding:2px 5px; border-radius:3px; font-size:10px;">تغيير</button></td>
-                <td>${m.joinDate}</td><td>${m.promoDate}</td><td>${diffDays} يوم</td>
+                <td>${m.joinDate}</td><td>${m.promoDate || m.joinDate}</td><td>${diffDays} يوم</td>
                 <td>${m.points}</td><td><button class="btn-del" onclick="deleteMember('${id}')">فصل</button></td></tr>`;
         }
         document.getElementById('displayArea').innerHTML = html + "</table>";
@@ -116,6 +114,7 @@
     }
 
     function showAll() { renderTable(members); }
+    
     function updateRankSelect() {
         const select = document.getElementById('mRankSelect');
         const filter = document.getElementById('filterRankSelect');
