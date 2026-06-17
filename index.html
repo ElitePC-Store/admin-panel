@@ -39,9 +39,11 @@
     <hr style="border-color: #30363d;">
 
     <div>
-        <h3>بحث عن عضو</h3>
+        <h3>بحث وتصفية الأعضاء</h3>
         <input type="text" id="searchId" placeholder="أدخل ID للبحث">
-        <button class="btn-search" onclick="searchMember()">بحث</button>
+        <button class="btn-search" onclick="searchMember()">بحث بالـ ID</button>
+        <select id="filterRankSelect"></select>
+        <button class="btn-search" onclick="filterByRank()">فلترة بالرتبة</button>
         <button onclick="showAll()">إظهار الكل</button>
     </div>
 
@@ -131,11 +133,22 @@
     }
 
     function updateRankSelect() {
-        const select = document.getElementById('mRankSelect');
-        select.innerHTML = "";
-        for (let r in ranks) {
-            select.innerHTML += `<option value="${r}" data-target="${ranks[r]}">${r}</option>`;
+        const selects = [document.getElementById('mRankSelect'), document.getElementById('filterRankSelect')];
+        selects.forEach(select => {
+            select.innerHTML = "";
+            for (let r in ranks) {
+                select.innerHTML += `<option value="${r}" data-target="${ranks[r]}">${r}</option>`;
+            }
+        });
+    }
+
+    function filterByRank() {
+        const rank = document.getElementById('filterRankSelect').value;
+        const filtered = {};
+        for (let id in members) {
+            if (members[id].rank === rank) filtered[id] = members[id];
         }
+        renderTable(filtered);
     }
 
     function editMemberName(id) {
