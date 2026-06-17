@@ -88,7 +88,6 @@
     
     <div id="displayArea"></div>
 
-    <!-- قسم سجل العمليات الجديد -->
     <hr style="border-color: #30363d;">
     <h3>سجل العمليات (Logs)</h3>
     <div id="logArea" style="text-align: right; max-height: 200px; overflow-y: auto; background: #0d1117; padding: 10px; border-radius: 5px; font-size: 12px; color: #8b949e;"></div>
@@ -100,16 +99,14 @@
     let settings = JSON.parse(localStorage.getItem('gangSettings')) || { title: "لوحة تحكم العصابة", logo: "https://via.placeholder.com/100" };
     let currentEditingId = null;
 
-    // وظيفة تسجيل العمليات
-    function addLog(msg) {
+    // --- نظام اللوق الجديد ---
+    function addLog(text) {
         let logs = JSON.parse(localStorage.getItem('gangLogs')) || [];
-        let time = new Date().toLocaleTimeString();
-        logs.unshift(`[${time}] ${msg}`);
-        if (logs.length > 20) logs.pop();
+        logs.unshift(`[${new Date().toLocaleTimeString()}] ${text}`);
+        if (logs.length > 50) logs.pop();
         localStorage.setItem('gangLogs', JSON.stringify(logs));
         renderLogs();
     }
-
     function renderLogs() {
         document.getElementById('logArea').innerHTML = (JSON.parse(localStorage.getItem('gangLogs')) || []).join('<br>');
     }
@@ -118,9 +115,7 @@
         if (document.getElementById('passInput').value === "ابو العبد") {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('mainContent').style.display = 'block';
-            applySettings();
-            showAll();
-            renderLogs();
+            applySettings(); showAll(); renderLogs();
         } else { alert("كلمة السر خاطئة!"); }
     }
 
@@ -142,24 +137,19 @@
 
     function confirmRankChange() {
         const newRank = document.getElementById("selectNewRank").value;
-        const oldRank = members[currentEditingId].rank;
         members[currentEditingId].rank = newRank;
         members[currentEditingId].promoDate = new Date().toLocaleDateString('en-CA'); 
         localStorage.setItem('gangData', JSON.stringify(members));
-        addLog(`تغيير رتبة ${currentEditingId}: من ${oldRank} إلى ${newRank}`);
-        showAll();
-        closeModal();
+        addLog(`تم تغيير رتبة العضو ${currentEditingId} إلى ${newRank}`);
+        showAll(); closeModal();
     }
 
     function updateSettings() {
-        const t = document.getElementById('newTitle').value;
-        const l = document.getElementById('newLogo').value;
-        if(t) settings.title = t;
-        if(l) settings.logo = l;
+        settings.title = document.getElementById('newTitle').value;
+        settings.logo = document.getElementById('newLogo').value;
         localStorage.setItem('gangSettings', JSON.stringify(settings));
         applySettings();
         addLog("تم تحديث إعدادات اللوحة");
-        alert("تم تحديث الإعدادات!");
     }
 
     function saveMember() {
@@ -167,24 +157,16 @@
         const rankEl = document.getElementById('mRankSelect');
         if (!id) return alert("الرجاء كتابة الـ ID");
         const today = new Date().toLocaleDateString('en-CA'); 
-        members[id] = { 
-            name: document.getElementById('mName').value, 
-            rank: rankEl.value, 
-            target: parseInt(rankEl.options[rankEl.selectedIndex]?.dataset.target || 0), 
-            points: 0, 
-            joinDate: today,
-            promoDate: today,
-            notes: ""
-        };
+        members[id] = { name: document.getElementById('mName').value, rank: rankEl.value, target: parseInt(rankEl.options[rankEl.selectedIndex]?.dataset.target || 0), points: 0, joinDate: today, promoDate: today, notes: "" };
         localStorage.setItem('gangData', JSON.stringify(members));
-        addLog(`إضافة عضو جديد: ${id}`);
+        addLog(`تم إضافة عضو جديد ID: ${id}`);
         showAll();
     }
 
     function updateNote(id, val) {
         members[id].notes = val;
         localStorage.setItem('gangData', JSON.stringify(members));
-        addLog(`تحديث ملاحظة: ${id}`);
+        addLog(`تم تحديث ملاحظات العضو ${id}`);
     }
 
     function renderTable(dataList) {
@@ -194,7 +176,6 @@
             let joinDate = new Date(m.joinDate);
             let diffDays = Math.floor((new Date() - joinDate) / (1000 * 60 * 60 * 24));
             let status = m.points >= (m.target || 0) ? "✅" : "❌";
-            
             html += `<tr><td>${id}</td>
                 <td>${m.name} <button onclick="editMemberName('${id}')" style="background:#0969da; border:none; color:white; cursor:pointer; padding:2px 5px; border-radius:3px; font-size:10px;">تعديل</button></td>
                 <td>${m.rank} <button onclick="openRankModal('${id}')" style="background:#0969da; border:none; color:white; cursor:pointer; padding:2px 5px; border-radius:3px; font-size:10px;">تغيير</button></td>
@@ -210,84 +191,50 @@
 
     function updateRankSelect() {
         const selects = [document.getElementById('mRankSelect'), document.getElementById('filterRankSelect')];
-        selects.forEach(select => {
-            select.innerHTML = "";
-            for (let r in ranks) {
-                select.innerHTML += `<option value="${r}" data-target="${ranks[r]}">${r}</option>`;
-            }
-        });
+        selects.forEach(s => { s.innerHTML = ""; for (let r in ranks) s.innerHTML += `<option value="${r}" data-target="${ranks[r]}">${r}</option>`; });
     }
 
     function filterByRank() {
         const rank = document.getElementById('filterRankSelect').value;
         const filtered = {};
-        for (let id in members) {
-            if (members[id].rank === rank) filtered[id] = members[id];
-        }
+        for (let id in members) if (members[id].rank === rank) filtered[id] = members[id];
         renderTable(filtered);
     }
 
     function editMemberName(id) {
-        const newName = prompt("أدخل الاسم الجديد للعضو:", members[id].name);
-        if (newName) {
-            members[id].name = newName;
-            localStorage.setItem('gangData', JSON.stringify(members));
-            addLog(`تعديل اسم: ${id}`);
-            showAll();
-        }
+        const newName = prompt("أدخل الاسم الجديد:", members[id].name);
+        if (newName) { members[id].name = newName; localStorage.setItem('gangData', JSON.stringify(members)); addLog(`تم تعديل اسم العضو ${id}`); showAll(); }
     }
 
     function searchMember() {
-        const searchId = document.getElementById('searchId').value;
-        if (members[searchId]) renderTable({ [searchId]: members[searchId] });
-        else alert("هذا الـ ID غير موجود");
+        const s = document.getElementById('searchId').value;
+        if (members[s]) renderTable({ [s]: members[s] }); else alert("غير موجود");
     }
 
     function manageRank(action) {
         const name = document.getElementById('newRankName').value;
-        if (!name) return alert("أدخل اسم الرتبة");
-        if (action === 'add') {
-            const target = document.getElementById('newRankTarget').value;
-            ranks[name] = parseInt(target);
-        } else delete ranks[name];
+        if (!name) return;
+        if (action === 'add') ranks[name] = parseInt(document.getElementById('newRankTarget').value); else delete ranks[name];
         localStorage.setItem('gangRanks', JSON.stringify(ranks));
         updateRankSelect();
-        addLog(`تعديل رتب: ${action === 'add' ? 'إضافة' : 'حذف'} ${name}`);
-        alert("تم تحديث الرتب!");
+        addLog(`تم تعديل الرتب: ${name}`);
     }
 
     function changePoints() {
         const id = document.getElementById('targetId').value;
         const pts = parseInt(document.getElementById('pointInput').value);
-        if(members[id]) {
-            members[id].points += pts;
-            localStorage.setItem('gangData', JSON.stringify(members));
-            addLog(`تعديل نقاط: ${id} بمقدار ${pts}`);
-            showAll();
-        } else alert("العضو غير موجود");
+        if(members[id]) { members[id].points += pts; localStorage.setItem('gangData', JSON.stringify(members)); addLog(`تم تحديث نقاط ${id} بـ ${pts}`); showAll(); }
     }
 
     function deleteMember(id) {
-        if(confirm("هل أنت متأكد من فصل هذا العضو؟")) {
-            delete members[id];
-            localStorage.setItem('gangData', JSON.stringify(members));
-            addLog(`فصل عضو: ${id}`);
-            showAll();
-        }
+        if(confirm("فصل العضو؟")) { delete members[id]; localStorage.setItem('gangData', JSON.stringify(members)); addLog(`تم فصل العضو ${id}`); showAll(); }
     }
 
     function deleteAllRanks() {
-        if (confirm("هل أنت متأكد؟ سيتم حذف جميع الرتب الموجودة!")) {
-            ranks = {};
-            localStorage.setItem('gangRanks', JSON.stringify(ranks));
-            updateRankSelect();
-            addLog("حذف جميع الرتب");
-            alert("تم حذف جميع الرتب.");
-        }
+        if (confirm("حذف كل الرتب؟")) { ranks = {}; localStorage.setItem('gangRanks', JSON.stringify(ranks)); updateRankSelect(); addLog("تم حذف جميع الرتب"); }
     }
     
     updateRankSelect();
-    applySettings();
 </script>
 </body>
 </html>
