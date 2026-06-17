@@ -27,22 +27,50 @@
     <button class="btn-add" onclick="checkPassword()">دخول</button>
 </div>
 
-<div id="rankModal"><div class="modal-content"><h3>اختر الرتبة</h3><select id="selectNewRank"></select><br><br><button class="btn-add" onclick="confirmRankChange()">تحديث</button><button class="btn-del" onclick="closeModals()">إلغاء</button></div></div>
-<div id="notesModal"><div class="modal-content"><h3>ملاحظات العضو</h3><textarea id="memberNotes"></textarea><br><button class="btn-add" onclick="saveNotes()">حفظ</button><button class="btn-del" onclick="closeModals()">إلغاء</button></div></div>
+<div id="rankModal"><div class="modal-content"><h3>اختر الرتبة الجديدة</h3><select id="selectNewRank"></select><br><br><button class="btn-add" onclick="confirmRankChange()">تحديث الرتبة</button><button class="btn-del" onclick="closeModals()">إلغاء</button></div></div>
+<div id="notesModal"><div class="modal-content"><h3>ملاحظات العضو</h3><textarea id="memberNotes" placeholder="اكتب ملاحظاتك هنا..."></textarea><br><button class="btn-add" onclick="saveNotes()">حفظ الملاحظة</button><button class="btn-del" onclick="closeModals()">إلغاء</button></div></div>
 
 <div id="mainContent" class="box" style="display: none;">
     <img id="logoImg" src="https://via.placeholder.com/100" alt="Logo">
     <h1 id="mainTitle">لوحة تحكم العصابة</h1>
     
-    <div><h3>تخصيص اللوحة</h3><input type="text" id="newTitle" placeholder="اسم العصابة"><input type="text" id="newLogo" placeholder="رابط الصورة"><button class="btn-add" onclick="updateSettings()">حفظ الإعدادات</button></div>
-    <hr>
-    <div><h3>بحث وفلترة</h3><input type="text" id="searchId" placeholder="ID"><button class="btn-search" onclick="searchMember()">بحث</button><select id="filterRankSelect"></select><button class="btn-search" onclick="filterByRank()">فلترة</button><button onclick="showAll()">الكل</button></div>
-    <hr>
-    <div><h3>إدارة الرتب</h3><input type="text" id="newRankName" placeholder="الاسم"><input type="number" id="newRankTarget" placeholder="النقاط"><button class="btn-add" onclick="manageRank('add')">إضافة</button><button class="btn-del" onclick="manageRank('del')">حذف</button><button class="btn-del" onclick="deleteAllRanks()">حذف الكل</button></div>
-    <hr>
-    <div><h3>إضافة عضو</h3><input type="text" id="mId" placeholder="ID"><input type="text" id="mName" placeholder="الاسم"><select id="mRankSelect"></select><button class="btn-add" onclick="saveMember()">حفظ العضو</button></div>
-    <hr>
-    <h3>إدارة النقاط</h3><input type="text" id="targetId" placeholder="ID"><input type="number" id="pointInput" placeholder="النقاط"><button class="btn-add" onclick="changePoints()">تحديث النقاط</button>
+    <div>
+        <h3>تخصيص اللوحة</h3>
+        <input type="text" id="newTitle" placeholder="اسم العصابة">
+        <input type="text" id="newLogo" placeholder="رابط الصورة">
+        <button class="btn-add" onclick="updateSettings()">حفظ الإعدادات</button>
+    </div>
+    <hr style="border-color: #30363d;">
+    <div>
+        <h3>بحث وتصفية الأعضاء</h3>
+        <input type="text" id="searchId" placeholder="ID للبحث">
+        <button class="btn-search" onclick="searchMember()">بحث</button>
+        <select id="filterRankSelect"></select>
+        <button class="btn-search" onclick="filterByRank()">فلترة</button>
+        <button onclick="showAll()">إظهار الكل</button>
+    </div>
+    <hr style="border-color: #30363d;">
+    <div>
+        <h3>إدارة الرتب</h3>
+        <input type="text" id="newRankName" placeholder="اسم الرتبة">
+        <input type="number" id="newRankTarget" placeholder="النقاط المطلوبة">
+        <button class="btn-add" onclick="manageRank('add')">إضافة رتبة</button>
+        <button class="btn-del" onclick="manageRank('del')">حذف رتبة</button>
+        <button class="btn-del" onclick="deleteAllRanks()">حذف كل الرتب</button>
+    </div>
+    <hr style="border-color: #30363d;">
+    <div>
+        <h3>إضافة عضو</h3>
+        <input type="text" id="mId" placeholder="ID العضو">
+        <input type="text" id="mName" placeholder="اسم العضو">
+        <select id="mRankSelect"></select>
+        <button class="btn-add" onclick="saveMember()">حفظ العضو</button>
+    </div>
+    <hr style="border-color: #30363d;">
+    <h3>إدارة النقاط</h3>
+    <input type="text" id="targetId" placeholder="ID العضو">
+    <input type="number" id="pointInput" placeholder="النقاط">
+    <button class="btn-add" onclick="changePoints()">تحديث النقاط</button>
     <div id="displayArea"></div>
 </div>
 
@@ -66,19 +94,22 @@
         document.getElementById('logoImg').src = settings.logo;
     }
 
+    function openRankModal(id) { currentEditingId = id; const select = document.getElementById("selectNewRank"); select.innerHTML = ""; for (let r in ranks) { select.innerHTML += `<option value="${r}">${r}</option>`; } document.getElementById("rankModal").style.display = "flex"; }
     function openNotesModal(id) { currentEditingId = id; document.getElementById("memberNotes").value = members[id].notes || ""; document.getElementById("notesModal").style.display = "flex"; }
-    function openRankModal(id) { currentEditingId = id; const select = document.getElementById("selectNewRank"); select.innerHTML = ""; for(let r in ranks) select.innerHTML += `<option value="${r}">${r}</option>`; document.getElementById("rankModal").style.display = "flex"; }
     function saveNotes() { members[currentEditingId].notes = document.getElementById("memberNotes").value; localStorage.setItem('gangData', JSON.stringify(members)); showAll(); closeModals(); }
     function closeModals() { document.getElementById("rankModal").style.display = "none"; document.getElementById("notesModal").style.display = "none"; }
     function confirmRankChange() { members[currentEditingId].rank = document.getElementById("selectNewRank").value; members[currentEditingId].promoDate = new Date().toLocaleDateString('en-CA'); localStorage.setItem('gangData', JSON.stringify(members)); showAll(); closeModals(); }
 
     function renderTable(dataList) {
-        let html = "<table><tr><th>ID</th><th>الاسم</th><th>الرتبة</th><th>التوظيف</th><th>الترقية</th><th>الأيام</th><th>النقاط</th><th>ملاحظات</th><th>إجراء</th></tr>";
+        let html = "<table><tr><th>ID</th><th>الاسم</th><th>الرتبة</th><th>تاريخ الترقية</th><th>النقاط</th><th>ملاحظات</th><th>إجراء</th></tr>";
         for (let id in dataList) {
             let m = dataList[id];
-            let join = new Date(m.joinDate);
-            let diffDays = Math.floor((new Date() - join) / (1000 * 60 * 60 * 24));
-            html += `<tr><td>${id}</td><td>${m.name} <button onclick="editMemberName('${id}')" style="background:#0969da; border:none; color:white; font-size:9px; cursor:pointer;">تعديل</button></td><td>${m.rank} <button onclick="openRankModal('${id}')" style="background:#0969da; border:none; color:white; font-size:9px; cursor:pointer;">تغيير</button></td><td>${m.joinDate}</td><td>${m.promoDate}</td><td>${diffDays}</td><td>${m.points}</td><td><button onclick="openNotesModal('${id}')" style="background:#8b5cf6; color:white; border:none; padding:3px; font-size:10px; cursor:pointer;">${m.notes ? 'عرض' : 'إضافة'}</button></td><td><button class="btn-del" onclick="deleteMember('${id}')" style="font-size:10px;">فصل</button></td></tr>`;
+            html += `<tr><td>${id}</td>
+                <td>${m.name} <button onclick="editMemberName('${id}')" style="background:#0969da; border:none; color:white; cursor:pointer; padding:2px 5px; font-size:10px;">تعديل</button></td>
+                <td>${m.rank} <button onclick="openRankModal('${id}')" style="background:#0969da; border:none; color:white; cursor:pointer; padding:2px 5px; font-size:10px;">تغيير</button></td>
+                <td>${m.promoDate}</td><td>${m.points}</td>
+                <td><button onclick="openNotesModal('${id}')" style="background:#8b5cf6; border:none; color:white; cursor:pointer; padding:5px; border-radius:3px;">${m.notes ? 'عرض/تعديل' : 'إضافة'}</button></td>
+                <td><button class="btn-del" onclick="deleteMember('${id}')">فصل</button></td></tr>`;
         }
         document.getElementById('displayArea').innerHTML = html + "</table>";
     }
@@ -86,8 +117,9 @@
     function saveMember() {
         const id = document.getElementById('mId').value;
         const rankEl = document.getElementById('mRankSelect');
+        if (!id) return alert("الرجاء كتابة ID");
         const today = new Date().toLocaleDateString('en-CA');
-        members[id] = { name: document.getElementById('mName').value, rank: rankEl.value, points: 0, joinDate: today, promoDate: today, notes: "" };
+        members[id] = { name: document.getElementById('mName').value, rank: rankEl.value, points: 0, promoDate: today, notes: "" };
         localStorage.setItem('gangData', JSON.stringify(members));
         showAll();
     }
@@ -95,18 +127,18 @@
     function showAll() { renderTable(members); }
     function updateRankSelect() {
         const selects = [document.getElementById('mRankSelect'), document.getElementById('filterRankSelect')];
-        selects.forEach(s => { s.innerHTML = ""; for(let r in ranks) s.innerHTML += `<option value="${r}">${r}</option>`; });
+        selects.forEach(s => { s.innerHTML = ""; for (let r in ranks) { s.innerHTML += `<option value="${r}">${r}</option>`; } });
     }
     function updateSettings() { settings.title = document.getElementById('newTitle').value || settings.title; settings.logo = document.getElementById('newLogo').value || settings.logo; localStorage.setItem('gangSettings', JSON.stringify(settings)); applySettings(); }
+    function editMemberName(id) { const n = prompt("الاسم الجديد:", members[id].name); if(n) { members[id].name = n; localStorage.setItem('gangData', JSON.stringify(members)); showAll(); } }
     function searchMember() { const s = document.getElementById('searchId').value; if(members[s]) renderTable({[s]: members[s]}); else alert("غير موجود"); }
     function filterByRank() { const r = document.getElementById('filterRankSelect').value; let f = {}; for(let id in members) if(members[id].rank === r) f[id] = members[id]; renderTable(f); }
-    function manageRank(action) { const n = document.getElementById('newRankName').value; if(action === 'add') ranks[n] = 0; else delete ranks[n]; localStorage.setItem('gangRanks', JSON.stringify(ranks)); updateRankSelect(); }
+    function manageRank(action) { const n = document.getElementById('newRankName').value; if(action === 'add') ranks[n] = parseInt(document.getElementById('newRankTarget').value) || 0; else delete ranks[n]; localStorage.setItem('gangRanks', JSON.stringify(ranks)); updateRankSelect(); }
     function changePoints() { const id = document.getElementById('targetId').value; const p = parseInt(document.getElementById('pointInput').value); if(members[id]) { members[id].points += p; localStorage.setItem('gangData', JSON.stringify(members)); showAll(); } }
-    function deleteMember(id) { if(confirm("متأكد من فصل العضو؟")) { delete members[id]; localStorage.setItem('gangData', JSON.stringify(members)); showAll(); } }
-    function deleteAllRanks() { if(confirm("متأكد من حذف جميع الرتب؟")) { ranks = {}; localStorage.setItem('gangRanks', JSON.stringify(ranks)); updateRankSelect(); } }
-    function editMemberName(id) { const n = prompt("الاسم الجديد:", members[id].name); if(n) { members[id].name = n; localStorage.setItem('gangData', JSON.stringify(members)); showAll(); } }
+    function deleteMember(id) { if(confirm("فصل العضو؟")) { delete members[id]; localStorage.setItem('gangData', JSON.stringify(members)); showAll(); } }
+    function deleteAllRanks() { if(confirm("حذف الكل؟")) { ranks = {}; localStorage.setItem('gangRanks', JSON.stringify(ranks)); updateRankSelect(); } }
 
-    updateRankSelect(); applySettings();
+    updateRankSelect(); applySettings(); showAll();
 </script>
 </body>
 </html>
