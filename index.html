@@ -125,14 +125,23 @@
         showAll();
     }
 
+    // تم تعديل هذه الدالة لتظهر خيارات بدل الإدخال النصي
     function changeRank(id) {
-        const newRank = prompt("أدخل الرتبة الجديدة:");
-        if (newRank && ranks.hasOwnProperty(newRank)) {
+        let optionsHtml = "";
+        for (let r in ranks) { optionsHtml += `<option value="${r}">${r}</option>`; }
+        const rankChangeDiv = document.createElement("div");
+        rankChangeDiv.innerHTML = `تغيير رتبة ${members[id].name}: <br><select id="selectNewRank">${optionsHtml}</select>`;
+        
+        const container = document.createElement("div");
+        container.appendChild(rankChangeDiv);
+
+        if(confirm("هل تريد تغيير الرتبة؟")) {
+            const newRank = document.getElementById("selectNewRank").value;
             members[id].rank = newRank;
             members[id].promoDate = new Date().toLocaleDateString('en-CA'); 
             localStorage.setItem('gangData', JSON.stringify(members));
             showAll();
-        } else { alert("الرتبة غير موجودة!"); }
+        }
     }
 
     function renderTable(dataList) {
