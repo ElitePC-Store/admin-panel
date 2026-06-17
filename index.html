@@ -14,15 +14,26 @@
         table { width: 100%; margin-top: 20px; border-collapse: collapse; }
         td, th { border: 1px solid #30363d; padding: 10px; font-size: 14px; }
         #logoImg { width: 100px; height: 100px; border-radius: 50%; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto; }
-        #loginScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0b0e14; z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        #loginScreen, #rankModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; display: none; flex-direction: column; justify-content: center; align-items: center; }
+        .modal-content { background: #161b22; padding: 20px; border-radius: 10px; border: 1px solid #30363d; }
     </style>
 </head>
 <body>
 
-<div id="loginScreen">
+<div id="loginScreen" style="display: flex;">
     <h1>دخول لوحة التحكم</h1>
     <input type="password" id="passInput" placeholder="أدخل كلمة السر">
     <button class="btn-add" onclick="checkPassword()">دخول</button>
+</div>
+
+<!-- نافذة اختيار الرتبة -->
+<div id="rankModal">
+    <div class="modal-content">
+        <h3>تغيير الرتبة</h3>
+        <select id="selectNewRank"></select><br>
+        <button class="btn-add" onclick="confirmRankChange()">موافق</button>
+        <button class="btn-del" onclick="closeModal()">إلغاء</button>
+    </div>
 </div>
 
 <div id="mainContent" class="box" style="display: none;">
@@ -82,6 +93,7 @@
     let members = JSON.parse(localStorage.getItem('gangData')) || {};
     let ranks = JSON.parse(localStorage.getItem('gangRanks')) || { "Helper": 100000, "Visor": 100 };
     let settings = JSON.parse(localStorage.getItem('gangSettings')) || { title: "لوحة تحكم العصابة", logo: "https://via.placeholder.com/100" };
+    let currentEditingId = null;
 
     function checkPassword() {
         if (document.getElementById('passInput').value === "ابو العبد") {
@@ -125,23 +137,24 @@
         showAll();
     }
 
-    // تم تعديل هذه الدالة لتظهر خيارات بدل الإدخال النصي
-    function changeRank(id) {
-        let optionsHtml = "";
-        for (let r in ranks) { optionsHtml += `<option value="${r}">${r}</option>`; }
-        const rankChangeDiv = document.createElement("div");
-        rankChangeDiv.innerHTML = `تغيير رتبة ${members[id].name}: <br><select id="selectNewRank">${optionsHtml}</select>`;
-        
-        const container = document.createElement("div");
-        container.appendChild(rankChangeDiv);
+    // دوال إدارة الـ Modal (النافذة)
+    function openRankModal(id) {
+        currentEditingId = id;
+        const select = document.getElementById("selectNewRank");
+        select.innerHTML = "";
+        for (let r in ranks) { select.innerHTML += `<option value="${r}">${r}</option>`; }
+        document.getElementById("rankModal").style.display = "flex";
+    }
 
-        if(confirm("هل تريد تغيير الرتبة؟")) {
-            const newRank = document.getElementById("selectNewRank").value;
-            members[id].rank = newRank;
-            members[id].promoDate = new Date().toLocaleDateString('en-CA'); 
-            localStorage.setItem('gangData', JSON.stringify(members));
-            showAll();
-        }
+    function closeModal() { document.getElementById("rankModal").style.display = "none"; }
+
+    function confirmRankChange() {
+        const newRank = document.getElementById("selectNewRank").value;
+        members[currentEditingId].rank = newRank;
+        members[currentEditingId].promoDate = new Date().toLocaleDateString('en-CA'); 
+        localStorage.setItem('gangData', JSON.stringify(members));
+        showAll();
+        closeModal();
     }
 
     function renderTable(dataList) {
@@ -154,7 +167,7 @@
             
             html += `<tr><td>${id}</td>
                 <td>${m.name} <button onclick="editMemberName('${id}')" style="background:#0969da; border:none; color:white; cursor:pointer; padding:2px 5px; border-radius:3px; font-size:10px;">تعديل</button></td>
-                <td>${m.rank} <button onclick="changeRank('${id}')" style="background:#0969da; border:none; color:white; cursor:pointer; padding:2px 5px; border-radius:3px; font-size:10px;">تغيير</button></td>
+                <td>${m.rank} <button onclick="openRankModal('${id}')" style="background:#0969da; border:none; color:white; cursor:pointer; padding:2px 5px; border-radius:3px; font-size:10px;">تغيير</button></td>
                 <td>${m.joinDate}</td><td>${m.promoDate || m.joinDate}</td><td>${diffDays} يوم</td>
                 <td>${m.points}</td><td>${m.target}</td><td>${status}</td>
                 <td><button class="btn-del" onclick="deleteMember('${id}')">فصل</button></td></tr>`;
