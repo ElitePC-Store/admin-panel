@@ -14,8 +14,10 @@
         table { width: 100%; margin-top: 20px; border-collapse: collapse; }
         td, th { border: 1px solid #30363d; padding: 10px; font-size: 14px; }
         #logoImg { width: 100px; height: 100px; border-radius: 50%; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto; }
-        #loginScreen, #rankModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; display: none; flex-direction: column; justify-content: center; align-items: center; }
-        .modal-content { background: #161b22; padding: 20px; border-radius: 10px; border: 1px solid #30363d; }
+        
+        /* تنسيق النافذة المنبثقة */
+        #loginScreen, #rankModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; display: none; flex-direction: column; justify-content: center; align-items: center; }
+        .modal-content { background: #161b22; padding: 25px; border-radius: 15px; border: 1px solid #30363d; }
     </style>
 </head>
 <body>
@@ -26,12 +28,11 @@
     <button class="btn-add" onclick="checkPassword()">دخول</button>
 </div>
 
-<!-- نافذة اختيار الرتبة -->
 <div id="rankModal">
     <div class="modal-content">
-        <h3>تغيير الرتبة</h3>
-        <select id="selectNewRank"></select><br>
-        <button class="btn-add" onclick="confirmRankChange()">موافق</button>
+        <h3>اختر الرتبة الجديدة</h3>
+        <select id="selectNewRank"></select><br><br>
+        <button class="btn-add" onclick="confirmRankChange()">تحديث الرتبة</button>
         <button class="btn-del" onclick="closeModal()">إلغاء</button>
     </div>
 </div>
@@ -110,6 +111,26 @@
         document.getElementById('logoImg').src = settings.logo;
     }
 
+    // دوال النافذة المنبثقة
+    function openRankModal(id) {
+        currentEditingId = id;
+        const select = document.getElementById("selectNewRank");
+        select.innerHTML = "";
+        for (let r in ranks) { select.innerHTML += `<option value="${r}">${r}</option>`; }
+        document.getElementById("rankModal").style.display = "flex";
+    }
+
+    function closeModal() { document.getElementById("rankModal").style.display = "none"; }
+
+    function confirmRankChange() {
+        const newRank = document.getElementById("selectNewRank").value;
+        members[currentEditingId].rank = newRank;
+        members[currentEditingId].promoDate = new Date().toLocaleDateString('en-CA'); 
+        localStorage.setItem('gangData', JSON.stringify(members));
+        showAll();
+        closeModal();
+    }
+
     function updateSettings() {
         const t = document.getElementById('newTitle').value;
         const l = document.getElementById('newLogo').value;
@@ -135,26 +156,6 @@
         };
         localStorage.setItem('gangData', JSON.stringify(members));
         showAll();
-    }
-
-    // دوال إدارة الـ Modal (النافذة)
-    function openRankModal(id) {
-        currentEditingId = id;
-        const select = document.getElementById("selectNewRank");
-        select.innerHTML = "";
-        for (let r in ranks) { select.innerHTML += `<option value="${r}">${r}</option>`; }
-        document.getElementById("rankModal").style.display = "flex";
-    }
-
-    function closeModal() { document.getElementById("rankModal").style.display = "none"; }
-
-    function confirmRankChange() {
-        const newRank = document.getElementById("selectNewRank").value;
-        members[currentEditingId].rank = newRank;
-        members[currentEditingId].promoDate = new Date().toLocaleDateString('en-CA'); 
-        localStorage.setItem('gangData', JSON.stringify(members));
-        showAll();
-        closeModal();
     }
 
     function renderTable(dataList) {
