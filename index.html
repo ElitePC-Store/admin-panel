@@ -17,7 +17,6 @@
         #logoImg { width: 100px; height: 100px; border-radius: 50%; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto; }
         #loginScreen, #rankModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; display: none; flex-direction: column; justify-content: center; align-items: center; }
         .modal-content { background: #161b22; padding: 25px; border-radius: 15px; border: 1px solid #30363d; }
-        #logArea { text-align: right; background: #0d1117; padding: 15px; border-radius: 10px; border: 1px solid #30363d; margin-top: 20px; color: #8b949e; max-height: 200px; overflow-y: auto; font-size: 13px; font-family: monospace; }
     </style>
 </head>
 <body>
@@ -88,10 +87,6 @@
     <button class="btn-add" onclick="changePoints()">تحديث النقاط</button>
     
     <div id="displayArea"></div>
-
-    <hr style="border-color: #30363d;">
-    <h3>سجل العمليات (Logs)</h3>
-    <div id="logArea"></div>
 </div>
 
 <script>
@@ -106,32 +101,15 @@
         fetch(DISCORD_WEBHOOK_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ content: `🚨 **سجل عمليات اللوحة** 🚨\n📝 ${action}\n⏰ ${new Date().toLocaleTimeString('en-US')}` })
+            body: JSON.stringify({ content: `🚨 **سجل عمليات اللوحة** 🚨\n📝 ${action}\n⏰ ${new Date().toLocaleTimeString('en-US', {hour12: false})}` })
         }).catch(err => console.log(err));
     }
-
-    function addLog(action) {
-        let logs = JSON.parse(localStorage.getItem('gangLogs')) || [];
-        // استخدام 'en-US' لضمان ظهور الأرقام بالصيغة الإنجليزية 123456789
-        let time = new Date().toLocaleTimeString('en-US', { hour12: false });
-        logs.unshift(`[${time}] ${action}`);
-        if (logs.length > 50) logs.pop();
-        localStorage.setItem('gangLogs', JSON.stringify(logs));
-        renderLogs();
-        sendToDiscord(action); 
-    }
-    
-    function renderLogs() {
-        document.getElementById('logArea').innerHTML = (JSON.parse(localStorage.getItem('gangLogs')) || []).map(l => `<div>${l}</div>`).join('');
-    }
-
-    // ... باقي الدوال تبقى كما هي بدون تغيير ...
 
     function checkPassword() {
         if (document.getElementById('passInput').value === "ابو العبد") {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('mainContent').style.display = 'block';
-            applySettings(); showAll(); renderLogs();
+            applySettings(); showAll();
         } else { alert("كلمة السر خاطئة!"); }
     }
 
@@ -156,7 +134,7 @@
         members[currentEditingId].rank = newRank;
         members[currentEditingId].promoDate = new Date().toLocaleDateString('en-CA'); 
         localStorage.setItem('gangData', JSON.stringify(members));
-        addLog(`تحديث رتبة ID: ${currentEditingId} إلى ${newRank}`);
+        sendToDiscord(`تحديث رتبة ID: ${currentEditingId} إلى ${newRank}`);
         showAll(); closeModal();
     }
 
@@ -165,7 +143,7 @@
         settings.logo = document.getElementById('newLogo').value;
         localStorage.setItem('gangSettings', JSON.stringify(settings));
         applySettings();
-        addLog("تم تحديث إعدادات اللوحة");
+        sendToDiscord("تم تحديث إعدادات اللوحة");
     }
 
     function saveMember() {
@@ -175,14 +153,14 @@
         const today = new Date().toLocaleDateString('en-CA'); 
         members[id] = { name: document.getElementById('mName').value, rank: rankEl.value, target: parseInt(rankEl.options[rankEl.selectedIndex]?.dataset.target || 0), points: 0, joinDate: today, promoDate: today, notes: "" };
         localStorage.setItem('gangData', JSON.stringify(members));
-        addLog(`إضافة عضو جديد: ${id}`);
+        sendToDiscord(`إضافة عضو جديد: ${id}`);
         showAll();
     }
 
     function updateNote(id, val) {
         members[id].notes = val;
         localStorage.setItem('gangData', JSON.stringify(members));
-        addLog(`تعديل ملاحظة لـ ID: ${id}`);
+        sendToDiscord(`تعديل ملاحظة لـ ID: ${id}`);
     }
 
     function renderTable(dataList) {
@@ -219,7 +197,7 @@
 
     function editMemberName(id) {
         const newName = prompt("أدخل الاسم الجديد:", members[id].name);
-        if (newName) { members[id].name = newName; localStorage.setItem('gangData', JSON.stringify(members)); addLog(`تعديل اسم العضو ${id}`); showAll(); }
+        if (newName) { members[id].name = newName; localStorage.setItem('gangData', JSON.stringify(members)); sendToDiscord(`تعديل اسم العضو ${id}`); showAll(); }
     }
 
     function searchMember() {
@@ -233,21 +211,21 @@
         if (action === 'add') ranks[name] = parseInt(document.getElementById('newRankTarget').value); else delete ranks[name];
         localStorage.setItem('gangRanks', JSON.stringify(ranks));
         updateRankSelect();
-        addLog(`تعديل الرتب: ${action} ${name}`);
+        sendToDiscord(`تعديل الرتب: ${action} ${name}`);
     }
 
     function changePoints() {
         const id = document.getElementById('targetId').value;
         const pts = parseInt(document.getElementById('pointInput').value);
-        if(members[id]) { members[id].points += pts; localStorage.setItem('gangData', JSON.stringify(members)); addLog(`تحديث نقاط ${id} بمقدار ${pts}`); showAll(); }
+        if(members[id]) { members[id].points += pts; localStorage.setItem('gangData', JSON.stringify(members)); sendToDiscord(`تحديث نقاط ${id} بمقدار ${pts}`); showAll(); }
     }
 
     function deleteMember(id) {
-        if(confirm("فصل العضو؟")) { delete members[id]; localStorage.setItem('gangData', JSON.stringify(members)); addLog(`فصل العضو: ${id}`); showAll(); }
+        if(confirm("فصل العضو؟")) { delete members[id]; localStorage.setItem('gangData', JSON.stringify(members)); sendToDiscord(`فصل العضو: ${id}`); showAll(); }
     }
 
     function deleteAllRanks() {
-        if (confirm("حذف كل الرتب؟")) { ranks = {}; localStorage.setItem('gangRanks', JSON.stringify(ranks)); updateRankSelect(); addLog("حذف جميع الرتب"); }
+        if (confirm("حذف كل الرتب؟")) { ranks = {}; localStorage.setItem('gangRanks', JSON.stringify(ranks)); updateRankSelect(); sendToDiscord("حذف جميع الرتب"); }
     }
     
     updateRankSelect();
