@@ -95,10 +95,20 @@
 </div>
 
 <script>
+    const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1517222406140334150/coHz5FEIdj1HLWMNqZBAbu2yh-LC8aSsWOY5ye0EMLfASfvVP329dY1Ai6IWt6ZalwcW";
+
     let members = JSON.parse(localStorage.getItem('gangData')) || {};
     let ranks = JSON.parse(localStorage.getItem('gangRanks')) || { "Helper": 100000, "Visor": 100 };
     let settings = JSON.parse(localStorage.getItem('gangSettings')) || { title: "لوحة تحكم العصابة", logo: "https://via.placeholder.com/100" };
     let currentEditingId = null;
+
+    function sendToDiscord(action) {
+        fetch(DISCORD_WEBHOOK_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content: `🚨 **سجل عمليات اللوحة** 🚨\n📝 ${action}\n⏰ ${new Date().toLocaleTimeString()}` })
+        }).catch(err => console.log(err));
+    }
 
     function addLog(action) {
         let logs = JSON.parse(localStorage.getItem('gangLogs')) || [];
@@ -106,6 +116,7 @@
         if (logs.length > 50) logs.pop();
         localStorage.setItem('gangLogs', JSON.stringify(logs));
         renderLogs();
+        sendToDiscord(action); 
     }
     function renderLogs() {
         document.getElementById('logArea').innerHTML = (JSON.parse(localStorage.getItem('gangLogs')) || []).map(l => `<div>${l}</div>`).join('');
