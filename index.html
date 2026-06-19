@@ -91,12 +91,13 @@
 
 <script>
     const WEBHOOKS = {
-        add: "https://discord.com/api/webhooks/1517472882962206722/BDkDPb4x4s-pedBzO0cE8DleLXIbihMC81H5NeF_Wx-B8rkZueYXyGwDroHaLeOvXT_N",
-        points: "https://discord.com/api/webhooks/1517222406140334150/coHz5FEIdj1HLWMNqZBAbu2yh-LC8aSsWOY5ye0EMLfASfvVP329dY1Ai6IWt6ZalwcW",
-        delete: "https://discord.com/api/webhooks/1517474557286547466/FLn72tSTdew5To-vwGEhnfVffyBRQPu4QeAF4dp_tDLi_BOfJL5zKtiyK9lo2K-f_LkN",
+        add: "https://discord.com/api/webhooks/1517222406140334150/coHz5FEIdj1HLWMNqZBAbu2yh-LC8aSsWOY5ye0EMLfASfvVP329dY1Ai6IWt6ZalwcW",
+        points: "https://discord.com/api/webhooks/1517472882962206722/BDkDPb4x4s-pedBzO0cE8DleLXIbihMC81H5NeF_Wx-B8rkZueYXyGwDroHaLeOvXT_N",
+        delete: "https://discord.com/api/webhooks/1517479737864360056/kY54uDPn9Zo5pq4vqhgk-Tn1HdNr_Zq0TrHlOMbujbXi8Jdl-YNH63TXhW4fka9F2Go_",
         rankChange: "https://discord.com/api/webhooks/1517474902066597930/EQUp8iVfIxCqwCDdbDwEJoWVNFdBhOlJFoRKfJx5bEyHkwitxi1OQ0XX_gO5t3RMAj9v",
-        settings: "https://discord.com/api/webhooks/1517474978998653008/H-0ZHC3Fnc6vOJo2wL_xQBrNzEFD4tBJAsshtvFoxidEGmvlcszmEoxpPI1ummFCGUd6",
-        manageRanks: "https://discord.com/api/webhooks/1517475074729316444/uD4b0ubdYNkyhfhK9Hqz23kWBMfl8GeRJZH1TdDyPBIe4RiA-WqmaOPkkj3iW5-NaaYh"
+        settings: "https://discord.com/api/webhooks/1517480388425941113/ViXeSo36kj-5HB161hPDohkj5C1DOCOhE2fOHDFoPvLGtuov0AyymOdPjKHZ-Em4aXsS",
+        manageRanks: "https://discord.com/api/webhooks/1517475074729316444/uD4b0ubdYNkyhfhK9Hqz23kWBMfl8GeRJZH1TdDyPBIe4RiA-WqmaOPkkj3iW5-NaaYh",
+        nameChange: "https://discord.com/api/webhooks/1517480599189852283/VM2DHJLi98hbHHY0TJiWHmfvdfcc6pbx3m6y_fK84XPaQviXVc7Udwi5jmLycBjZ8P5i"
     };
 
     let members = JSON.parse(localStorage.getItem('gangData')) || {};
@@ -205,7 +206,7 @@
 
     function editMemberName(id) {
         const newName = prompt("أدخل الاسم الجديد:", members[id].name);
-        if (newName) { members[id].name = newName; localStorage.setItem('gangData', JSON.stringify(members)); sendToDiscord(`تعديل اسم العضو ${id}`, 'add'); showAll(); }
+        if (newName) { members[id].name = newName; localStorage.setItem('gangData', JSON.stringify(members)); sendToDiscord(`تعديل اسم العضو ${id} ليصبح ${newName}`, 'nameChange'); showAll(); }
     }
 
     function searchMember() {
