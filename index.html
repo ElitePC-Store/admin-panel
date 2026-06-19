@@ -90,18 +90,26 @@
 </div>
 
 <script>
-    const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1517222406140334150/coHz5FEIdj1HLWMNqZBAbu2yh-LC8aSsWOY5ye0EMLfASfvVP329dY1Ai6IWt6ZalwcW";
+    // قاموس الروابط الموزعة على الـ 6 رومات
+    const WEBHOOKS = {
+        add: "https://discord.com/api/webhooks/1517472882962206722/BDkDPb4x4s-pedBzO0cE8DleLXIbihMC81H5NeF_Wx-B8rkZueYXyGwDroHaLeOvXT_N",
+        points: "https://discord.com/api/webhooks/1517222406140334150/coHz5FEIdj1HLWMNqZBAbu2yh-LC8aSsWOY5ye0EMLfASfvVP329dY1Ai6IWt6ZalwcW",
+        delete: "https://discord.com/api/webhooks/1517474557286547466/FLn72tSTdew5To-vwGEhnfVffyBRQPu4QeAF4dp_tDLi_BOfJL5zKtiyK9lo2K-f_LkN",
+        rankChange: "https://discord.com/api/webhooks/1517474902066597930/EQUp8iVfIxCqwCDdbDwEJoWVNFdBhOlJFoRKfJx5bEyHkwitxi1OQ0XX_gO5t3RMAj9v",
+        settings: "https://discord.com/api/webhooks/1517474978998653008/H-0ZHC3Fnc6vOJo2wL_xQBrNzEFD4tBJAsshtvFoxidEGmvlcszmEoxpPI1ummFCGUd6",
+        manageRanks: "https://discord.com/api/webhooks/1517475074729316444/uD4b0ubdYNkyhfhK9Hqz23kWBMfl8GeRJZH1TdDyPBIe4RiA-WqmaOPkkj3iW5-NaaYh"
+    };
 
     let members = JSON.parse(localStorage.getItem('gangData')) || {};
     let ranks = JSON.parse(localStorage.getItem('gangRanks')) || { "Helper": 100000, "Visor": 100 };
     let settings = JSON.parse(localStorage.getItem('gangSettings')) || { title: "لوحة تحكم العصابة", logo: "https://via.placeholder.com/100" };
     let currentEditingId = null;
 
-    function sendToDiscord(action) {
-        fetch(DISCORD_WEBHOOK_URL, {
+    function sendToDiscord(action, type) {
+        fetch(WEBHOOKS[type], {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ content: `🚨 **سجل عمليات اللوحة** 🚨\n📝 ${action}\n⏰ ${new Date().toLocaleTimeString('en-US', {hour12: false})}` })
+            body: JSON.stringify({ content: `🚨 **تنبيه لوحة التحكم** 🚨\n📝 ${action}\n⏰ ${new Date().toLocaleTimeString()}` })
         }).catch(err => console.log(err));
     }
 
@@ -134,7 +142,7 @@
         members[currentEditingId].rank = newRank;
         members[currentEditingId].promoDate = new Date().toLocaleDateString('en-CA'); 
         localStorage.setItem('gangData', JSON.stringify(members));
-        sendToDiscord(`تحديث رتبة ID: ${currentEditingId} إلى ${newRank}`);
+        sendToDiscord(`تحديث رتبة ID: ${currentEditingId} إلى ${newRank}`, 'rankChange');
         showAll(); closeModal();
     }
 
@@ -143,7 +151,7 @@
         settings.logo = document.getElementById('newLogo').value;
         localStorage.setItem('gangSettings', JSON.stringify(settings));
         applySettings();
-        sendToDiscord("تم تحديث إعدادات اللوحة");
+        sendToDiscord("تم تحديث إعدادات اللوحة", 'settings');
     }
 
     function saveMember() {
@@ -153,14 +161,14 @@
         const today = new Date().toLocaleDateString('en-CA'); 
         members[id] = { name: document.getElementById('mName').value, rank: rankEl.value, target: parseInt(rankEl.options[rankEl.selectedIndex]?.dataset.target || 0), points: 0, joinDate: today, promoDate: today, notes: "" };
         localStorage.setItem('gangData', JSON.stringify(members));
-        sendToDiscord(`إضافة عضو جديد: ${id}`);
+        sendToDiscord(`إضافة عضو جديد: ${id}`, 'add');
         showAll();
     }
 
     function updateNote(id, val) {
         members[id].notes = val;
         localStorage.setItem('gangData', JSON.stringify(members));
-        sendToDiscord(`تعديل ملاحظة لـ ID: ${id}`);
+        sendToDiscord(`تعديل ملاحظة لـ ID: ${id}`, 'settings');
     }
 
     function renderTable(dataList) {
@@ -197,7 +205,7 @@
 
     function editMemberName(id) {
         const newName = prompt("أدخل الاسم الجديد:", members[id].name);
-        if (newName) { members[id].name = newName; localStorage.setItem('gangData', JSON.stringify(members)); sendToDiscord(`تعديل اسم العضو ${id}`); showAll(); }
+        if (newName) { members[id].name = newName; localStorage.setItem('gangData', JSON.stringify(members)); sendToDiscord(`تعديل اسم العضو ${id}`, 'add'); showAll(); }
     }
 
     function searchMember() {
@@ -211,21 +219,21 @@
         if (action === 'add') ranks[name] = parseInt(document.getElementById('newRankTarget').value); else delete ranks[name];
         localStorage.setItem('gangRanks', JSON.stringify(ranks));
         updateRankSelect();
-        sendToDiscord(`تعديل الرتب: ${action} ${name}`);
+        sendToDiscord(`تعديل الرتب: ${action} ${name}`, 'manageRanks');
     }
 
     function changePoints() {
         const id = document.getElementById('targetId').value;
         const pts = parseInt(document.getElementById('pointInput').value);
-        if(members[id]) { members[id].points += pts; localStorage.setItem('gangData', JSON.stringify(members)); sendToDiscord(`تحديث نقاط ${id} بمقدار ${pts}`); showAll(); }
+        if(members[id]) { members[id].points += pts; localStorage.setItem('gangData', JSON.stringify(members)); sendToDiscord(`تحديث نقاط ${id} بمقدار ${pts}`, 'points'); showAll(); }
     }
 
     function deleteMember(id) {
-        if(confirm("فصل العضو؟")) { delete members[id]; localStorage.setItem('gangData', JSON.stringify(members)); sendToDiscord(`فصل العضو: ${id}`); showAll(); }
+        if(confirm("فصل العضو؟")) { delete members[id]; localStorage.setItem('gangData', JSON.stringify(members)); sendToDiscord(`فصل العضو: ${id}`, 'delete'); showAll(); }
     }
 
     function deleteAllRanks() {
-        if (confirm("حذف كل الرتب؟")) { ranks = {}; localStorage.setItem('gangRanks', JSON.stringify(ranks)); updateRankSelect(); sendToDiscord("حذف جميع الرتب"); }
+        if (confirm("حذف كل الرتب؟")) { ranks = {}; localStorage.setItem('gangRanks', JSON.stringify(ranks)); updateRankSelect(); sendToDiscord("حذف جميع الرتب", 'manageRanks'); }
     }
     
     updateRankSelect();
