@@ -105,7 +105,6 @@
     let currentEditingId = null;
 
     function sendToDiscord(action, type) {
-        // تم استخدام 'en-US' لضمان ظهور الأرقام بالإنجليزية 123
         const time = new Date().toLocaleTimeString('en-US', { hour12: false });
         fetch(WEBHOOKS[type], {
             method: "POST",
