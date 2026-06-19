@@ -90,7 +90,6 @@
 </div>
 
 <script>
-    // قاموس الروابط الموزعة على الـ 6 رومات
     const WEBHOOKS = {
         add: "https://discord.com/api/webhooks/1517472882962206722/BDkDPb4x4s-pedBzO0cE8DleLXIbihMC81H5NeF_Wx-B8rkZueYXyGwDroHaLeOvXT_N",
         points: "https://discord.com/api/webhooks/1517222406140334150/coHz5FEIdj1HLWMNqZBAbu2yh-LC8aSsWOY5ye0EMLfASfvVP329dY1Ai6IWt6ZalwcW",
@@ -106,10 +105,12 @@
     let currentEditingId = null;
 
     function sendToDiscord(action, type) {
+        // تم استخدام 'en-US' لضمان ظهور الأرقام بالإنجليزية 123
+        const time = new Date().toLocaleTimeString('en-US', { hour12: false });
         fetch(WEBHOOKS[type], {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ content: `🚨 **تنبيه لوحة التحكم** 🚨\n📝 ${action}\n⏰ ${new Date().toLocaleTimeString()}` })
+            body: JSON.stringify({ content: `🚨 **تنبيه لوحة التحكم** 🚨\n📝 ${action}\n⏰ ${time}` })
         }).catch(err => console.log(err));
     }
 
