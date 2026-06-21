@@ -9,11 +9,11 @@
         input, select { padding: 10px; margin: 5px; width: 140px; border-radius: 5px; border: 1px solid #30363d; background: #0d1117; color: white; }
         button { padding: 8px 15px; color: white; border: none; cursor: pointer; border-radius: 5px; margin: 5px; }
         .btn-add { background: #238636; }
+        .btn-sub { background: #b62323; }
         .btn-del { background: #da3633; }
         .btn-search { background: #0969da; }
         table { width: 100%; margin-top: 20px; border-collapse: collapse; }
         td, th { border: 1px solid #30363d; padding: 10px; font-size: 14px; }
-        .notes-input { width: 90% !important; min-width: 150px; background: #0d1117; color: white; border: 1px solid #30363d; padding: 8px; border-radius: 4px; }
         #logoImg { width: 100px; height: 100px; border-radius: 50%; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto; }
         #loginScreen, #rankModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; display: none; flex-direction: column; justify-content: center; align-items: center; }
         .modal-content { background: #161b22; padding: 25px; border-radius: 15px; border: 1px solid #30363d; }
@@ -48,7 +48,6 @@
     </div>
     
     <hr style="border-color: #30363d;">
-
     <div>
         <h3>البحث والفلترة</h3>
         <input type="text" id="searchId" placeholder="ID العضو">
@@ -59,7 +58,6 @@
     </div>
 
     <hr style="border-color: #30363d;">
-
     <div>
         <h3>إدارة الرتب</h3>
         <input type="text" id="newRankName" placeholder="اسم الرتبة">
@@ -70,7 +68,6 @@
     </div>
 
     <hr style="border-color: #30363d;">
-
     <div>
         <h3>إضافة عضو</h3>
         <input type="text" id="mId" placeholder="ID العضو">
@@ -80,12 +77,14 @@
     </div>
 
     <hr style="border-color: #30363d;">
-
     <h3>إدارة النقاط والمقابلات</h3>
     <input type="text" id="targetId" placeholder="ID العضو">
-    <input type="number" id="pointInput" placeholder="النقاط">
-    <button class="btn-add" onclick="changePoints()">زيادة نقاط</button>
-    <button class="btn-add" onclick="changeInterviews()">إضافة مقابلة</button>
+    <input type="number" id="pointInput" placeholder="القيمة">
+    <br>
+    <button class="btn-add" onclick="changePoints(true)">زيادة نقاط</button>
+    <button class="btn-sub" onclick="changePoints(false)">نقص نقاط</button>
+    <button class="btn-add" onclick="changeInterviews(true)">إضافة مقابلة</button>
+    <button class="btn-sub" onclick="changeInterviews(false)">نقص مقابلة</button>
     
     <div id="displayArea"></div>
 </div>
@@ -129,21 +128,31 @@
         const name = document.getElementById('mName').value;
         const rank = document.getElementById('mRankSelect').value;
         if (!id || !name) return alert("الرجاء إدخال البيانات");
-        members[id] = { name: name, rank: rank, target: ranks[rank].target, targetInts: ranks[rank].ints, points: 0, interviews: 0, notes: "" };
+        members[id] = { name: name, rank: rank, target: ranks[rank].target, targetInts: ranks[rank].ints, points: 0, interviews: 0 };
         localStorage.setItem('gangData', JSON.stringify(members));
         sendToDiscord("إضافة・عضو「➕」", `تم إضافة العضو: ${name} (ID: ${id})`, 'add');
         showAll();
     }
 
-    function changePoints() {
+    function changePoints(isAdd) {
         const id = document.getElementById('targetId').value;
-        const pts = parseInt(document.getElementById('pointInput').value);
-        if(members[id]) { members[id].points += pts; localStorage.setItem('gangData', JSON.stringify(members)); sendToDiscord("تحديث・النقاط「💎」", `تم إضافة ${pts} نقاط لـ ${members[id].name}`, 'points'); showAll(); }
+        const pts = parseInt(document.getElementById('pointInput').value) || 0;
+        if(members[id]) {
+            isAdd ? members[id].points += pts : members[id].points -= pts;
+            localStorage.setItem('gangData', JSON.stringify(members));
+            sendToDiscord("تحديث・النقاط「💎」", `تم ${isAdd ? 'إضافة' : 'خصم'} ${pts} نقطة لـ ${members[id].name}`, 'points');
+            showAll();
+        }
     }
 
-    function changeInterviews() {
+    function changeInterviews(isAdd) {
         const id = document.getElementById('targetId').value;
-        if(members[id]) { members[id].interviews += 1; localStorage.setItem('gangData', JSON.stringify(members)); sendToDiscord("تحديث・النقاط「💎」", `تم إضافة مقابلة لـ ${members[id].name}`, 'points'); showAll(); }
+        if(members[id]) {
+            isAdd ? members[id].interviews += 1 : members[id].interviews -= 1;
+            localStorage.setItem('gangData', JSON.stringify(members));
+            sendToDiscord("تحديث・النقاط「💎」", `تم ${isAdd ? 'إضافة' : 'خصم'} مقابلة لـ ${members[id].name}`, 'points');
+            showAll();
+        }
     }
 
     function deleteMember(id) {
