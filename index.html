@@ -64,6 +64,7 @@
         <h3>إدارة الرتب</h3>
         <input type="text" id="newRankName" placeholder="اسم الرتبة">
         <input type="number" id="newRankTarget" placeholder="النقاط المطلوبة">
+        <input type="number" id="newRankInterviews" placeholder="المقابلات المطلوبة">
         <button class="btn-add" onclick="manageRank('add')">إضافة رتبة</button>
         <button class="btn-del" onclick="manageRank('del')">حذف رتبة</button>
         <button class="btn-del" onclick="deleteAllRanks()">حذف جميع الرتب</button>
@@ -83,7 +84,7 @@
 
     <h3>إدارة النقاط والمقابلات</h3>
     <input type="text" id="targetId" placeholder="ID العضو">
-    <input type="number" id="pointInput" placeholder="النقاط (مثال: 50)">
+    <input type="number" id="pointInput" placeholder="النقاط">
     <button class="btn-add" onclick="changePoints()">تحديث النقاط</button>
     <button class="btn-add" onclick="changeInterviews()">زيادة المقابلات</button>
     
@@ -102,17 +103,13 @@
     };
 
     let members = JSON.parse(localStorage.getItem('gangData')) || {};
-    let ranks = JSON.parse(localStorage.getItem('gangRanks')) || { "Helper": 100000, "Visor": 100 };
+    let ranks = JSON.parse(localStorage.getItem('gangRanks')) || { "Helper": {target: 1000, ints: 5} };
     let settings = JSON.parse(localStorage.getItem('gangSettings')) || { title: "لوحة تحكم العصابة", logo: "https://via.placeholder.com/100" };
     let currentEditingId = null;
 
     function sendToDiscord(action, type) {
         const time = new Date().toLocaleTimeString('en-US', { hour12: false });
-        fetch(WEBHOOKS[type], {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ content: `🚨 **تنبيه لوحة التحكم** 🚨\n📝 ${action}\n⏰ ${time}` })
-        }).catch(err => console.log(err));
+        fetch(WEBHOOKS[type], { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: `🚨 **تنبيه لوحة التحكم** 🚨\n📝 ${action}\n⏰ ${time}` }) }).catch(err => console.log(err));
     }
 
     function checkPassword() {
@@ -142,7 +139,8 @@
     function confirmRankChange() {
         const newRank = document.getElementById("selectNewRank").value;
         members[currentEditingId].rank = newRank;
-        members[currentEditingId].promoDate = new Date().toLocaleDateString('en-CA'); 
+        members[currentEditingId].target = ranks[newRank].target;
+        members[currentEditingId].targetInts = ranks[newRank].ints;
         localStorage.setItem('gangData', JSON.stringify(members));
         sendToDiscord(`تحديث رتبة ID: ${currentEditingId} إلى ${newRank}`, 'rankChange');
         showAll(); closeModal();
@@ -153,39 +151,29 @@
         settings.logo = document.getElementById('newLogo').value;
         localStorage.setItem('gangSettings', JSON.stringify(settings));
         applySettings();
-        sendToDiscord("تم تحديث إعدادات اللوحة", 'settings');
     }
 
     function saveMember() {
         const id = document.getElementById('mId').value;
-        const rankEl = document.getElementById('mRankSelect');
+        const rankName = document.getElementById('mRankSelect').value;
         if (!id) return alert("الرجاء كتابة الـ ID");
-        const today = new Date().toLocaleDateString('en-CA'); 
-        members[id] = { name: document.getElementById('mName').value, rank: rankEl.value, target: parseInt(rankEl.options[rankEl.selectedIndex]?.dataset.target || 0), points: 0, interviews: 0, joinDate: today, promoDate: today, notes: "" };
+        members[id] = { name: document.getElementById('mName').value, rank: rankName, target: ranks[rankName].target, targetInts: ranks[rankName].ints, points: 0, interviews: 0, joinDate: new Date().toLocaleDateString('en-CA'), notes: "" };
         localStorage.setItem('gangData', JSON.stringify(members));
-        sendToDiscord(`إضافة عضو جديد: ${id}`, 'add');
         showAll();
     }
 
-    function updateNote(id, val) {
-        members[id].notes = val;
-        localStorage.setItem('gangData', JSON.stringify(members));
-        sendToDiscord(`تعديل ملاحظة لـ ID: ${id}`, 'settings');
-    }
+    function updateNote(id, val) { members[id].notes = val; localStorage.setItem('gangData', JSON.stringify(members)); }
 
     function renderTable(dataList) {
-        let html = "<table><tr><th>ID</th><th>الاسم</th><th>الرتبة</th><th>تاريخ التوظيف</th><th>الأيام</th><th>النقاط</th><th>المقابلات</th><th>المطلوب</th><th>مستوفي</th><th>ملاحظات</th><th>إجراء</th></tr>";
+        let html = "<table><tr><th>ID</th><th>الاسم</th><th>الرتبة</th><th>النقاط</th><th>المقابلات</th><th>المطلوب (نقاط/مقابلات)</th><th>مستوفي</th><th>ملاحظات</th><th>إجراء</th></tr>";
         for (let id in dataList) {
             let m = dataList[id];
-            let joinDate = new Date(m.joinDate);
-            let diffDays = Math.floor((new Date() - joinDate) / (1000 * 60 * 60 * 24));
-            let status = m.points >= (m.target || 0) ? "✅" : "❌";
+            let status = (m.points >= m.target && m.interviews >= m.targetInts) ? "✅" : "❌";
             html += `<tr><td>${id}</td>
                 <td>${m.name} <button onclick="editMemberName('${id}')" style="background:#0969da; border:none; color:white; cursor:pointer; padding:2px 5px; border-radius:3px; font-size:10px;">تعديل</button></td>
                 <td>${m.rank} <button onclick="openRankModal('${id}')" style="background:#0969da; border:none; color:white; cursor:pointer; padding:2px 5px; border-radius:3px; font-size:10px;">تغيير</button></td>
-                <td>${m.joinDate}</td><td>${diffDays}</td>
-                <td>${m.points}</td><td>${m.interviews || 0}</td><td>${m.target}</td><td>${status}</td>
-                <td><input type="text" class="notes-input" value="${m.notes || ''}" onchange="updateNote('${id}', this.value)" placeholder="أكتب ملاحظة..."></td>
+                <td>${m.points}</td><td>${m.interviews}</td><td>${m.target} / ${m.targetInts}</td><td>${status}</td>
+                <td><input type="text" class="notes-input" value="${m.notes || ''}" onchange="updateNote('${id}', this.value)"></td>
                 <td><button class="btn-del" onclick="deleteMember('${id}')">فصل</button></td></tr>`;
         }
         document.getElementById('displayArea').innerHTML = html + "</table>";
@@ -195,7 +183,7 @@
 
     function updateRankSelect() {
         const selects = [document.getElementById('mRankSelect'), document.getElementById('filterRankSelect')];
-        selects.forEach(s => { s.innerHTML = ""; for (let r in ranks) s.innerHTML += `<option value="${r}" data-target="${ranks[r]}">${r}</option>`; });
+        selects.forEach(s => { s.innerHTML = ""; for (let r in ranks) s.innerHTML += `<option value="${r}">${r}</option>`; });
     }
 
     function filterByRank() {
@@ -207,7 +195,7 @@
 
     function editMemberName(id) {
         const newName = prompt("أدخل الاسم الجديد:", members[id].name);
-        if (newName) { members[id].name = newName; localStorage.setItem('gangData', JSON.stringify(members)); sendToDiscord(`تعديل اسم العضو ${id} ليصبح ${newName}`, 'nameChange'); showAll(); }
+        if (newName) { members[id].name = newName; localStorage.setItem('gangData', JSON.stringify(members)); showAll(); }
     }
 
     function searchMember() {
@@ -218,30 +206,26 @@
     function manageRank(action) {
         const name = document.getElementById('newRankName').value;
         if (!name) return;
-        if (action === 'add') ranks[name] = parseInt(document.getElementById('newRankTarget').value); else delete ranks[name];
+        if (action === 'add') {
+            ranks[name] = { target: parseInt(document.getElementById('newRankTarget').value), ints: parseInt(document.getElementById('newRankInterviews').value) };
+        } else delete ranks[name];
         localStorage.setItem('gangRanks', JSON.stringify(ranks));
         updateRankSelect();
-        sendToDiscord(`تعديل الرتب: ${action} ${name}`, 'manageRanks');
     }
 
     function changePoints() {
         const id = document.getElementById('targetId').value;
         const pts = parseInt(document.getElementById('pointInput').value);
-        if(members[id]) { members[id].points += pts; localStorage.setItem('gangData', JSON.stringify(members)); sendToDiscord(`تحديث نقاط ${id} بمقدار ${pts}`, 'points'); showAll(); }
+        if(members[id]) { members[id].points += pts; localStorage.setItem('gangData', JSON.stringify(members)); showAll(); }
     }
 
     function changeInterviews() {
         const id = document.getElementById('targetId').value;
-        if(members[id]) { members[id].interviews = (members[id].interviews || 0) + 1; localStorage.setItem('gangData', JSON.stringify(members)); sendToDiscord(`زيادة مقابلة لـ ${id}`, 'points'); showAll(); }
+        if(members[id]) { members[id].interviews += 1; localStorage.setItem('gangData', JSON.stringify(members)); showAll(); }
     }
 
-    function deleteMember(id) {
-        if(confirm("فصل العضو؟")) { delete members[id]; localStorage.setItem('gangData', JSON.stringify(members)); sendToDiscord(`فصل العضو: ${id}`, 'delete'); showAll(); }
-    }
-
-    function deleteAllRanks() {
-        if (confirm("حذف كل الرتب؟")) { ranks = {}; localStorage.setItem('gangRanks', JSON.stringify(ranks)); updateRankSelect(); sendToDiscord("حذف جميع الرتب", 'manageRanks'); }
-    }
+    function deleteMember(id) { if(confirm("فصل العضو؟")) { delete members[id]; localStorage.setItem('gangData', JSON.stringify(members)); showAll(); } }
+    function deleteAllRanks() { if (confirm("حذف كل الرتب؟")) { ranks = {}; localStorage.setItem('gangRanks', JSON.stringify(ranks)); updateRankSelect(); } }
     
     updateRankSelect();
 </script>
