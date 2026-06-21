@@ -42,7 +42,7 @@
     
     <div>
         <h3>تخصيص اللوحة</h3>
-        <input type="text" id="newTitle" placeholder="اسم العصابة الجديد">
+        <input type="text" id="newTitle" placeholder="اسم العصابة">
         <input type="text" id="newLogo" placeholder="رابط الصورة">
         <button class="btn-add" onclick="updateSettings()">حفظ الإعدادات</button>
     </div>
@@ -50,12 +50,12 @@
     <hr style="border-color: #30363d;">
 
     <div>
-        <h3>بحث وتصفية الأعضاء</h3>
-        <input type="text" id="searchId" placeholder="أدخل ID للبحث">
-        <button class="btn-search" onclick="searchMember()">بحث بالـ ID</button>
+        <h3>البحث والفلترة</h3>
+        <input type="text" id="searchId" placeholder="ID العضو">
+        <button class="btn-search" onclick="searchMember()">بحث</button>
         <select id="filterRankSelect"></select>
-        <button class="btn-search" onclick="filterByRank()">فلترة بالرتبة</button>
-        <button onclick="showAll()">إظهار الكل</button>
+        <button class="btn-search" onclick="filterByRank()">فلترة</button>
+        <button onclick="showAll()">الكل</button>
     </div>
 
     <hr style="border-color: #30363d;">
@@ -65,9 +65,8 @@
         <input type="text" id="newRankName" placeholder="اسم الرتبة">
         <input type="number" id="newRankTarget" placeholder="النقاط المطلوبة">
         <input type="number" id="newRankInterviews" placeholder="المقابلات المطلوبة">
-        <button class="btn-add" onclick="manageRank('add')">إضافة رتبة</button>
-        <button class="btn-del" onclick="manageRank('del')">حذف رتبة</button>
-        <button class="btn-del" onclick="deleteAllRanks()">حذف جميع الرتب</button>
+        <button class="btn-add" onclick="manageRank('add')">إضافة</button>
+        <button class="btn-del" onclick="manageRank('del')">حذف</button>
     </div>
 
     <hr style="border-color: #30363d;">
@@ -77,7 +76,7 @@
         <input type="text" id="mId" placeholder="ID العضو">
         <input type="text" id="mName" placeholder="اسم العضو">
         <select id="mRankSelect"></select>
-        <button class="btn-add" onclick="saveMember()">حفظ العضو</button>
+        <button class="btn-add" onclick="saveMember()">حفظ</button>
     </div>
 
     <hr style="border-color: #30363d;">
@@ -85,8 +84,8 @@
     <h3>إدارة النقاط والمقابلات</h3>
     <input type="text" id="targetId" placeholder="ID العضو">
     <input type="number" id="pointInput" placeholder="النقاط">
-    <button class="btn-add" onclick="changePoints()">تحديث النقاط</button>
-    <button class="btn-add" onclick="changeInterviews()">زيادة المقابلات</button>
+    <button class="btn-add" onclick="changePoints()">زيادة نقاط</button>
+    <button class="btn-add" onclick="changeInterviews()">إضافة مقابلة</button>
     
     <div id="displayArea"></div>
 </div>
@@ -103,20 +102,19 @@
     };
 
     let members = JSON.parse(localStorage.getItem('gangData')) || {};
-    let ranks = JSON.parse(localStorage.getItem('gangRanks')) || { "Helper": {target: 1000, ints: 5} };
+    let ranks = JSON.parse(localStorage.getItem('gangRanks')) || { "عضو": {target: 0, ints: 0} };
     let settings = JSON.parse(localStorage.getItem('gangSettings')) || { title: "لوحة تحكم العصابة", logo: "https://via.placeholder.com/100" };
     let currentEditingId = null;
 
-    function sendToDiscord(action, type) {
-        const time = new Date().toLocaleTimeString('en-US', { hour12: false });
-        fetch(WEBHOOKS[type], { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: `🚨 **تنبيه لوحة التحكم** 🚨\n📝 ${action}\n⏰ ${time}` }) }).catch(err => console.log(err));
+    function sendToDiscord(title, msg, type) {
+        fetch(WEBHOOKS[type], { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: `**${title}**\n${msg}` }) }).catch(err => console.log(err));
     }
 
     function checkPassword() {
         if (document.getElementById('passInput').value === "ابو العبد") {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('mainContent').style.display = 'block';
-            applySettings(); showAll();
+            applySettings(); showAll(); updateRankSelect();
         } else { alert("كلمة السر خاطئة!"); }
     }
 
@@ -126,23 +124,46 @@
         document.getElementById('logoImg').src = settings.logo;
     }
 
-    function openRankModal(id) {
-        currentEditingId = id;
-        const select = document.getElementById("selectNewRank");
-        select.innerHTML = "";
-        for (let r in ranks) { select.innerHTML += `<option value="${r}">${r}</option>`; }
-        document.getElementById("rankModal").style.display = "flex";
+    function saveMember() {
+        const id = document.getElementById('mId').value;
+        const name = document.getElementById('mName').value;
+        const rank = document.getElementById('mRankSelect').value;
+        if (!id || !name) return alert("الرجاء إدخال البيانات");
+        members[id] = { name: name, rank: rank, target: ranks[rank].target, targetInts: ranks[rank].ints, points: 0, interviews: 0, notes: "" };
+        localStorage.setItem('gangData', JSON.stringify(members));
+        sendToDiscord("إضافة・عضو「➕」", `تم إضافة العضو: ${name} (ID: ${id})`, 'add');
+        showAll();
     }
 
+    function changePoints() {
+        const id = document.getElementById('targetId').value;
+        const pts = parseInt(document.getElementById('pointInput').value);
+        if(members[id]) { members[id].points += pts; localStorage.setItem('gangData', JSON.stringify(members)); sendToDiscord("تحديث・النقاط「💎」", `تم إضافة ${pts} نقاط لـ ${members[id].name}`, 'points'); showAll(); }
+    }
+
+    function changeInterviews() {
+        const id = document.getElementById('targetId').value;
+        if(members[id]) { members[id].interviews += 1; localStorage.setItem('gangData', JSON.stringify(members)); sendToDiscord("تحديث・النقاط「💎」", `تم إضافة مقابلة لـ ${members[id].name}`, 'points'); showAll(); }
+    }
+
+    function deleteMember(id) {
+        if(confirm("فصل العضو؟")) {
+            sendToDiscord("فصل・عضو「⛔」", `تم فصل العضو: ${members[id].name}`, 'delete');
+            delete members[id]; localStorage.setItem('gangData', JSON.stringify(members)); showAll();
+        }
+    }
+
+    function openRankModal(id) { currentEditingId = id; const select = document.getElementById("selectNewRank"); select.innerHTML = ""; for (let r in ranks) select.innerHTML += `<option value="${r}">${r}</option>`; document.getElementById("rankModal").style.display = "flex"; }
     function closeModal() { document.getElementById("rankModal").style.display = "none"; }
 
     function confirmRankChange() {
         const newRank = document.getElementById("selectNewRank").value;
+        const oldName = members[currentEditingId].name;
         members[currentEditingId].rank = newRank;
         members[currentEditingId].target = ranks[newRank].target;
         members[currentEditingId].targetInts = ranks[newRank].ints;
         localStorage.setItem('gangData', JSON.stringify(members));
-        sendToDiscord(`تحديث رتبة ID: ${currentEditingId} إلى ${newRank}`, 'rankChange');
+        sendToDiscord("تغيير・الرتبة「👑」", `تم تغيير رتبة ${oldName} إلى ${newRank}`, 'rankChange');
         showAll(); closeModal();
     }
 
@@ -150,85 +171,40 @@
         settings.title = document.getElementById('newTitle').value;
         settings.logo = document.getElementById('newLogo').value;
         localStorage.setItem('gangSettings', JSON.stringify(settings));
+        sendToDiscord("تحديث・الإعدادات「⚙️」", "تم تحديث إعدادات اللوحة", 'settings');
         applySettings();
-    }
-
-    function saveMember() {
-        const id = document.getElementById('mId').value;
-        const rankName = document.getElementById('mRankSelect').value;
-        if (!id) return alert("الرجاء كتابة الـ ID");
-        members[id] = { name: document.getElementById('mName').value, rank: rankName, target: ranks[rankName].target, targetInts: ranks[rankName].ints, points: 0, interviews: 0, joinDate: new Date().toLocaleDateString('en-CA'), notes: "" };
-        localStorage.setItem('gangData', JSON.stringify(members));
-        sendToDiscord(`إضافة عضو جديد: ${id}`, 'add');
-        showAll();
-    }
-
-    function updateNote(id, val) { members[id].notes = val; localStorage.setItem('gangData', JSON.stringify(members)); }
-
-    function renderTable(dataList) {
-        let html = "<table><tr><th>ID</th><th>الاسم</th><th>الرتبة</th><th>النقاط</th><th>المقابلات</th><th>المطلوب (نقاط/مقابلات)</th><th>مستوفي</th><th>ملاحظات</th><th>إجراء</th></tr>";
-        for (let id in dataList) {
-            let m = dataList[id];
-            let status = (m.points >= m.target && m.interviews >= m.targetInts) ? "✅" : "❌";
-            html += `<tr><td>${id}</td>
-                <td>${m.name} <button onclick="editMemberName('${id}')" style="background:#0969da; border:none; color:white; cursor:pointer; padding:2px 5px; border-radius:3px; font-size:10px;">تعديل</button></td>
-                <td>${m.rank} <button onclick="openRankModal('${id}')" style="background:#0969da; border:none; color:white; cursor:pointer; padding:2px 5px; border-radius:3px; font-size:10px;">تغيير</button></td>
-                <td>${m.points}</td><td>${m.interviews}</td><td>${m.target} / ${m.targetInts}</td><td>${status}</td>
-                <td><input type="text" class="notes-input" value="${m.notes || ''}" onchange="updateNote('${id}', this.value)"></td>
-                <td><button class="btn-del" onclick="deleteMember('${id}')">فصل</button></td></tr>`;
-        }
-        document.getElementById('displayArea').innerHTML = html + "</table>";
-    }
-
-    function showAll() { renderTable(members); }
-
-    function updateRankSelect() {
-        const selects = [document.getElementById('mRankSelect'), document.getElementById('filterRankSelect')];
-        selects.forEach(s => { s.innerHTML = ""; for (let r in ranks) s.innerHTML += `<option value="${r}">${r}</option>`; });
-    }
-
-    function filterByRank() {
-        const rank = document.getElementById('filterRankSelect').value;
-        const filtered = {};
-        for (let id in members) if (members[id].rank === rank) filtered[id] = members[id];
-        renderTable(filtered);
-    }
-
-    function editMemberName(id) {
-        const newName = prompt("أدخل الاسم الجديد:", members[id].name);
-        if (newName) { members[id].name = newName; localStorage.setItem('gangData', JSON.stringify(members)); sendToDiscord(`تعديل اسم العضو ${id}`, 'nameChange'); showAll(); }
-    }
-
-    function searchMember() {
-        const s = document.getElementById('searchId').value;
-        if (members[s]) renderTable({ [s]: members[s] }); else alert("غير موجود");
     }
 
     function manageRank(action) {
         const name = document.getElementById('newRankName').value;
         if (!name) return;
-        if (action === 'add') {
-            ranks[name] = { target: parseInt(document.getElementById('newRankTarget').value), ints: parseInt(document.getElementById('newRankInterviews').value) };
-        } else delete ranks[name];
+        if (action === 'add') ranks[name] = { target: parseInt(document.getElementById('newRankTarget').value), ints: parseInt(document.getElementById('newRankInterviews').value) };
+        else delete ranks[name];
         localStorage.setItem('gangRanks', JSON.stringify(ranks));
+        sendToDiscord("إدارة・الرتب「🏛️」", `تم ${action === 'add' ? 'إضافة' : 'حذف'} الرتبة: ${name}`, 'manageRanks');
         updateRankSelect();
-        sendToDiscord(`إدارة الرتب: ${action} ${name}`, 'manageRanks');
     }
 
-    function changePoints() {
-        const id = document.getElementById('targetId').value;
-        const pts = parseInt(document.getElementById('pointInput').value);
-        if(members[id]) { members[id].points += pts; localStorage.setItem('gangData', JSON.stringify(members)); sendToDiscord(`تحديث نقاط ${id}`, 'points'); showAll(); }
+    function editMemberName(id) {
+        const newName = prompt("الاسم الجديد:", members[id].name);
+        if (newName) { const oldName = members[id].name; members[id].name = newName; localStorage.setItem('gangData', JSON.stringify(members)); sendToDiscord("تغيير・اسم「📝」", `تم تغيير الاسم من ${oldName} إلى ${newName}`, 'nameChange'); showAll(); }
     }
 
-    function changeInterviews() {
-        const id = document.getElementById('targetId').value;
-        if(members[id]) { members[id].interviews += 1; localStorage.setItem('gangData', JSON.stringify(members)); sendToDiscord(`زيادة مقابلة لـ ${id}`, 'points'); showAll(); }
+    function renderTable(dataList) {
+        let html = "<table><tr><th>ID</th><th>الاسم</th><th>الرتبة</th><th>النقاط</th><th>المقابلات</th><th>الحالة</th><th>إجراء</th></tr>";
+        for (let id in dataList) {
+            let m = dataList[id];
+            let status = (m.points >= m.target && m.interviews >= m.targetInts) ? "✅" : "❌";
+            html += `<tr><td>${id}</td><td>${m.name} <button onclick="editMemberName('${id}')">📝</button></td><td>${m.rank} <button onclick="openRankModal('${id}')">👑</button></td><td>${m.points}</td><td>${m.interviews}</td><td>${status}</td><td><button class="btn-del" onclick="deleteMember('${id}')">فصل</button></td></tr>`;
+        }
+        document.getElementById('displayArea').innerHTML = html + "</table>";
     }
 
-    function deleteMember(id) { if(confirm("فصل العضو؟")) { delete members[id]; localStorage.setItem('gangData', JSON.stringify(members)); sendToDiscord(`فصل ${id}`, 'delete'); showAll(); } }
-    function deleteAllRanks() { if (confirm("حذف كل الرتب؟")) { ranks = {}; localStorage.setItem('gangRanks', JSON.stringify(ranks)); updateRankSelect(); sendToDiscord("حذف كل الرتب", 'manageRanks'); } }
-    
+    function showAll() { renderTable(members); }
+    function updateRankSelect() { const selects = [document.getElementById('mRankSelect'), document.getElementById('filterRankSelect')]; selects.forEach(s => { s.innerHTML = ""; for (let r in ranks) s.innerHTML += `<option value="${r}">${r}</option>`; }); }
+    function searchMember() { const s = document.getElementById('searchId').value; if(members[s]) renderTable({[s]: members[s]}); else alert("غير موجود"); }
+    function filterByRank() { const r = document.getElementById('filterRankSelect').value; const f = {}; for(let id in members) if(members[id].rank === r) f[id] = members[id]; renderTable(f); }
+
     updateRankSelect();
 </script>
 </body>
