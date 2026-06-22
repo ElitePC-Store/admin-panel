@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>لوحة التحكم الإدارية</title>
+    <title id="pageTitle">لوحة تحكم العصابة</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #0b0e14; color: #e0e0e0; text-align: center; padding: 20px; }
         .box { background: #161b22; padding: 20px; border-radius: 15px; width: 95%; margin: auto; border: 1px solid #30363d; }
@@ -14,29 +14,33 @@
         .btn-search { background: #0969da; }
         table { width: 100%; margin-top: 20px; border-collapse: collapse; }
         td, th { border: 1px solid #30363d; padding: 10px; font-size: 14px; }
+        #logoImg { width: 100px; height: 100px; border-radius: 50%; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto; }
+        #loginScreen, #rankModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; display: none; flex-direction: column; justify-content: center; align-items: center; }
+        .modal-content { background: #161b22; padding: 25px; border-radius: 15px; border: 1px solid #30363d; }
     </style>
 </head>
 <body>
 
-<div id="loginScreen" style="display: flex; flex-direction: column; align-items: center;">
-    <h1>تسجيل دخول الإدارة</h1>
-    <input type="text" id="adminIdInput" placeholder="أدخل ID المسؤول">
-    <button class="btn-add" onclick="checkAdmin()">دخول</button>
+<div id="loginScreen" style="display: flex;">
+    <h1>دخول لوحة التحكم</h1>
+    <input type="password" id="passInput" placeholder="أدخل كلمة السر">
+    <button class="btn-add" onclick="checkPassword()">دخول</button>
+</div>
+
+<div id="rankModal">
+    <div class="modal-content">
+        <h3>اختر الرتبة الجديدة</h3>
+        <select id="selectNewRank"></select><br><br>
+        <button class="btn-add" onclick="confirmRankChange()">تحديث الرتبة</button>
+        <button class="btn-del" onclick="closeModal()">إلغاء</button>
+    </div>
 </div>
 
 <div id="mainContent" class="box" style="display: none;">
-    <h1>لوحة تحكم المسؤولين</h1>
+    <img id="logoImg" src="https://via.placeholder.com/100" alt="Logo">
+    <h1 id="mainTitle">لوحة تحكم العصابة</h1>
     
-    <!-- قسم إدارة المسؤولين -->
-    <div>
-        <h3>إدارة المسؤولين (Admin Panel)</h3>
-        <input type="text" id="newAdminId" placeholder="ID المسؤول الجديد">
-        <button class="btn-add" onclick="addAdmin()">إضافة مسؤول</button>
-    </div>
-    <hr>
-    
-    <!-- باقي الميزات كما هي -->
-    <h3>إدارة النقاط</h3>
+    <h3>إدارة النقاط والمقابلات</h3>
     <input type="text" id="targetId" placeholder="ID العضو">
     <input type="number" id="pointInput" placeholder="القيمة">
     <br>
@@ -49,35 +53,49 @@
 </div>
 
 <script>
-    // قائمة المسؤولين المخزنة
-    let admins = JSON.parse(localStorage.getItem('gangAdmins')) || ["123456"]; // أضف ID الخاص بك هنا
+    const WEBHOOKS = { points: "https://discord.com/api/webhooks/1517472882962206722/BDkDPb4x4s-pedBzO0cE8DleLXIbihMC81H5NeF_Wx-B8rkZueYXyGwDroHaLeOvXT_N" };
     let members = JSON.parse(localStorage.getItem('gangData')) || {};
 
-    function checkAdmin() {
-        const id = document.getElementById('adminIdInput').value;
-        if (admins.includes(id)) {
+    function checkPassword() {
+        if (document.getElementById('passInput').value === "ابو العبد") {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('mainContent').style.display = 'block';
             showAll();
-        } else {
-            alert("أنت لست مسؤولاً!");
+        } else { alert("كلمة السر خاطئة!"); }
+    }
+
+    function sendToDiscord(title, msg) {
+        fetch(WEBHOOKS.points, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: `**${title}**\n${msg}` }) }).catch(err => console.log(err));
+    }
+
+    function changePoints(isAdd) {
+        const id = document.getElementById('targetId').value;
+        const pts = parseInt(document.getElementById('pointInput').value) || 0;
+        if(members[id]) {
+            isAdd ? members[id].points += pts : members[id].points -= pts;
+            localStorage.setItem('gangData', JSON.stringify(members));
+            sendToDiscord("تحديث・النقاط「💎」", `تم ${isAdd ? 'إضافة' : 'خصم'} ${pts} نقطة لـ ${members[id].name}`);
+            showAll();
         }
     }
 
-    function addAdmin() {
-        const id = document.getElementById('newAdminId').value;
-        if(id && !admins.includes(id)) {
-            admins.push(id);
-            localStorage.setItem('gangAdmins', JSON.stringify(admins));
-            alert("تم إضافة المسؤول بنجاح!");
+    function changeInterviews(isAdd) {
+        const id = document.getElementById('targetId').value;
+        if(members[id]) {
+            isAdd ? members[id].interviews++ : members[id].interviews--;
+            localStorage.setItem('gangData', JSON.stringify(members));
+            sendToDiscord("تحديث・النقاط「💎」", `تم ${isAdd ? 'إضافة' : 'خصم'} مقابلة لـ ${members[id].name}`);
+            showAll();
         }
     }
 
-    // باقي الدوال (changePoints, changeInterviews, showAll...) 
-    // يمكنك دمجها هنا بنفس الطريقة السابقة لضمان عمل اللوحات
-    function changePoints(isAdd) { /* ... نفس كودك السابق ... */ }
-    function changeInterviews(isAdd) { /* ... نفس كودك السابق ... */ }
-    function showAll() { /* ... نفس كودك السابق ... */ }
+    function showAll() {
+        let html = "<table><tr><th>ID</th><th>الاسم</th><th>النقاط</th><th>المقابلات</th></tr>";
+        for (let id in members) {
+            html += `<tr><td>${id}</td><td>${members[id].name}</td><td>${members[id].points}</td><td>${members[id].interviews}</td></tr>`;
+        }
+        document.getElementById('displayArea').innerHTML = html + "</table>";
+    }
 </script>
 </body>
 </html>
