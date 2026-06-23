@@ -6,7 +6,7 @@
     <style>
         body { font-family: Arial, sans-serif; background-color: #0b0e14; color: #e0e0e0; text-align: center; padding: 20px; }
         .box { background: #161b22; padding: 20px; border-radius: 15px; width: 95%; margin: auto; border: 1px solid #30363d; }
-        input { padding: 10px; margin: 5px; width: 160px; border-radius: 5px; border: 1px solid #30363d; background: #0d1117; color: white; }
+        input, select { padding: 10px; margin: 5px; width: 160px; border-radius: 5px; border: 1px solid #30363d; background: #0d1117; color: white; }
         button { padding: 10px 20px; color: white; border: none; cursor: pointer; border-radius: 5px; margin: 5px; }
         .btn-green { background: #238636; }
         .btn-red { background: #b62323; }
@@ -25,28 +25,35 @@
 <div id="mainContent" class="box" style="display: none;">
     <h1>لوحة تحكم Blackout</h1>
 
-    <div style="border-bottom: 1px solid #30363d; padding-bottom: 20px;">
-        <h3>إضافة مسؤول جديد</h3>
+    <div>
+        <h3>إدارة الرتب</h3>
+        <input type="text" id="newRankName" placeholder="اسم الرتبة">
+        <button class="btn-green" onclick="addRank()">إضافة رتبة</button>
+        <button class="btn-red" onclick="removeRank()">حذف رتبة</button>
+    </div>
+
+    <div>
+        <h3>إضافة مسؤول</h3>
         <input type="text" id="adminName" placeholder="اسم المسؤول">
         <input type="text" id="adminId" placeholder="ID المسؤول">
-        <input type="text" id="adminRanks" placeholder="الرتب (مثال: رتبة1,رتبة2)">
+        <select id="rankSelect" multiple style="height: 100px;"></select>
+        <p><small>(اضغط Ctrl لاختيار أكثر من رتبة)</small></p>
         <button class="btn-green" onclick="addAdmin()">إضافة مسؤول</button>
     </div>
 
-    <div style="padding-top: 20px;">
-        <h3>إدارة نقاط الأعضاء</h3>
+    <div>
+        <h3>إدارة النقاط</h3>
         <input type="text" id="memberId" placeholder="ID العضو">
-        <input type="text" id="memberName" placeholder="اسم العضو">
-        <input type="number" id="pointAmount" placeholder="عدد النقاط">
-        <br>
-        <button class="btn-green" onclick="updatePoints(true)">إضافة نقاط</button>
-        <button class="btn-red" onclick="updatePoints(false)">خصم نقاط</button>
+        <input type="number" id="pointAmount" placeholder="العدد">
+        <button class="btn-green" onclick="updatePoints(true)">إضافة</button>
+        <button class="btn-red" onclick="updatePoints(false)">خصم</button>
     </div>
 
     <div id="displayArea"></div>
 </div>
 
 <script>
+    let ranks = JSON.parse(localStorage.getItem('gangRanks')) || ["عضو"];
     let admins = JSON.parse(localStorage.getItem('gangAdmins')) || {};
     let members = JSON.parse(localStorage.getItem('gangData')) || {};
 
@@ -54,43 +61,50 @@
         if (document.getElementById('passInput').value === "ابو العبد") {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('mainContent').style.display = 'block';
-            showTables();
+            updateUI();
         } else { alert("كلمة السر خاطئة!"); }
     }
 
+    function addRank() {
+        let name = document.getElementById('newRankName').value;
+        if(name && !ranks.includes(name)) { ranks.push(name); localStorage.setItem('gangRanks', JSON.stringify(ranks)); updateUI(); }
+    }
+
+    function removeRank() {
+        let name = document.getElementById('newRankName').value;
+        ranks = ranks.filter(r => r !== name);
+        localStorage.setItem('gangRanks', JSON.stringify(ranks));
+        updateUI();
+    }
+
     function addAdmin() {
-        const name = document.getElementById('adminName').value;
-        const id = document.getElementById('adminId').value;
-        const ranks = document.getElementById('adminRanks').value;
-        if(name && id && ranks) {
-            admins[id] = { name: name, ranks: ranks.split(',') };
-            localStorage.setItem('gangAdmins', JSON.stringify(admins));
-            showTables();
-        }
+        let name = document.getElementById('adminName').value;
+        let id = document.getElementById('adminId').value;
+        let selectedRanks = Array.from(document.getElementById('rankSelect').selectedOptions).map(o => o.value);
+        if(name && id) { admins[id] = { name, ranks: selectedRanks }; localStorage.setItem('gangAdmins', JSON.stringify(admins)); updateUI(); }
+    }
+
+    function updateUI() {
+        let rankSelect = document.getElementById('rankSelect');
+        rankSelect.innerHTML = "";
+        ranks.forEach(r => rankSelect.innerHTML += `<option value="${r}">${r}</option>`);
+        showTables();
     }
 
     function updatePoints(isAdd) {
-        const id = document.getElementById('memberId').value;
-        const name = document.getElementById('memberName').value;
-        const points = parseInt(document.getElementById('pointAmount').value) || 0;
-        
-        if(!members[id]) members[id] = { name: name, points: 0 };
-        
-        isAdd ? members[id].points += points : members[id].points -= points;
+        let id = document.getElementById('memberId').value;
+        let pts = parseInt(document.getElementById('pointAmount').value) || 0;
+        if(!members[id]) members[id] = { points: 0 };
+        isAdd ? members[id].points += pts : members[id].points -= pts;
         localStorage.setItem('gangData', JSON.stringify(members));
         showTables();
     }
 
     function showTables() {
         let html = "<h3>المسؤولون</h3><table><tr><th>ID</th><th>الاسم</th><th>الرتب</th></tr>";
-        for (let id in admins) {
-            html += `<tr><td>${id}</td><td>${admins[id].name}</td><td>${admins[id].ranks.join('، ')}</td></tr>`;
-        }
-        html += "</table><h3>الأعضاء</h3><table><tr><th>ID</th><th>الاسم</th><th>النقاط</th></tr>";
-        for (let id in members) {
-            html += `<tr><td>${id}</td><td>${members[id].name}</td><td>${members[id].points}</td></tr>`;
-        }
-        document.getElementById('displayArea').innerHTML = html + "</table>";
+        for (let id in admins) html += `<tr><td>${id}</td><td>${admins[id].name}</td><td>${admins[id].ranks.join(', ')}</td></tr>`;
+        html += "</table>";
+        document.getElementById('displayArea').innerHTML = html;
     }
 </script>
 </body>
