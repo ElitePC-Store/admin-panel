@@ -16,30 +16,27 @@
 </head>
 <body>
 
-<!-- شاشة الدخول -->
 <div id="loginScreen" style="display: flex; flex-direction: column; align-items: center;">
     <h1>دخول الإدارة</h1>
     <input type="password" id="passInput" placeholder="أدخل كلمة السر">
     <button class="btn-green" onclick="checkPassword()">دخول</button>
 </div>
 
-<!-- اللوحة الرئيسية -->
 <div id="mainContent" class="box" style="display: none;">
-    <h1>لوحة التحكم</h1>
+    <h1>لوحة تحكم المسؤولين</h1>
 
-    <!-- قسم إضافة مسؤولين -->
-    <div style="border-bottom: 1px solid #30363d; padding-bottom: 20px;">
+    <div>
         <h3>إضافة مسؤول جديد</h3>
         <input type="text" id="adminName" placeholder="اسم المسؤول">
         <input type="text" id="adminId" placeholder="ID المسؤول">
+        <input type="text" id="adminRanks" placeholder="الرتب (مثال: رتبة1,رتبة2)">
         <button class="btn-green" onclick="addAdmin()">إضافة مسؤول</button>
     </div>
 
-    <!-- قسم إضافة ونقص النقاط -->
-    <div style="padding-top: 20px;">
+    <div>
         <h3>إدارة النقاط</h3>
         <input type="text" id="targetId" placeholder="ID العضو">
-        <input type="number" id="pointAmount" placeholder="عدد النقاط">
+        <input type="number" id="pointAmount" placeholder="العدد">
         <br>
         <button class="btn-green" onclick="updatePoints(true)">إضافة نقاط</button>
         <button class="btn-red" onclick="updatePoints(false)">خصم نقاط</button>
@@ -49,7 +46,7 @@
 </div>
 
 <script>
-    let admins = JSON.parse(localStorage.getItem('gangAdmins')) || { "1": "المالك (Joud)" };
+    let admins = JSON.parse(localStorage.getItem('gangAdmins')) || {};
     let members = JSON.parse(localStorage.getItem('gangData')) || {};
 
     function checkPassword() {
@@ -63,10 +60,12 @@
     function addAdmin() {
         const name = document.getElementById('adminName').value;
         const id = document.getElementById('adminId').value;
-        if(name && id) {
-            admins[id] = name;
+        const ranksInput = document.getElementById('adminRanks').value;
+        if(name && id && ranksInput) {
+            admins[id] = { name: name, ranks: ranksInput.split(',') };
             localStorage.setItem('gangAdmins', JSON.stringify(admins));
-            alert("تم إضافة المسؤول بنجاح!");
+            alert("تم إضافة المسؤول ورتبه بنجاح!");
+            showTable();
         }
     }
 
@@ -76,16 +75,16 @@
         if(members[id]) {
             isAdd ? members[id].points += amount : members[id].points -= amount;
         } else {
-            members[id] = { name: "عضو جديد", points: amount };
+            members[id] = { name: "عضو", points: amount };
         }
         localStorage.setItem('gangData', JSON.stringify(members));
         showTable();
     }
 
     function showTable() {
-        let html = "<table><tr><th>ID</th><th>الاسم</th><th>النقاط</th></tr>";
-        for (let id in members) {
-            html += `<tr><td>${id}</td><td>${members[id].name}</td><td>${members[id].points}</td></tr>`;
+        let html = "<table><tr><th>ID المسؤول</th><th>الاسم</th><th>الرتب</th></tr>";
+        for (let id in admins) {
+            html += `<tr><td>${id}</td><td>${admins[id].name}</td><td>${admins[id].ranks.join(' - ')}</td></tr>`;
         }
         document.getElementById('displayArea').innerHTML = html + "</table>";
     }
