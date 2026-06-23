@@ -2,97 +2,90 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title id="pageTitle">لوحة تحكم العصابة</title>
+    <title>لوحة التحكم الإدارية</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #0b0e14; color: #e0e0e0; text-align: center; padding: 20px; }
         .box { background: #161b22; padding: 20px; border-radius: 15px; width: 95%; margin: auto; border: 1px solid #30363d; }
-        input, select { padding: 10px; margin: 5px; width: 140px; border-radius: 5px; border: 1px solid #30363d; background: #0d1117; color: white; }
-        button { padding: 8px 15px; color: white; border: none; cursor: pointer; border-radius: 5px; margin: 5px; }
-        .btn-add { background: #238636; }
-        .btn-sub { background: #b62323; }
-        .btn-del { background: #da3633; }
-        .btn-search { background: #0969da; }
+        input { padding: 10px; margin: 5px; width: 180px; border-radius: 5px; border: 1px solid #30363d; background: #0d1117; color: white; }
+        button { padding: 10px 20px; color: white; border: none; cursor: pointer; border-radius: 5px; margin: 5px; }
+        .btn-green { background: #238636; }
+        .btn-red { background: #b62323; }
         table { width: 100%; margin-top: 20px; border-collapse: collapse; }
-        td, th { border: 1px solid #30363d; padding: 10px; font-size: 14px; }
-        #logoImg { width: 100px; height: 100px; border-radius: 50%; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto; }
-        #loginScreen, #rankModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; display: none; flex-direction: column; justify-content: center; align-items: center; }
-        .modal-content { background: #161b22; padding: 25px; border-radius: 15px; border: 1px solid #30363d; }
+        td, th { border: 1px solid #30363d; padding: 10px; }
     </style>
 </head>
 <body>
 
-<div id="loginScreen" style="display: flex;">
-    <h1>دخول لوحة التحكم</h1>
+<!-- شاشة الدخول -->
+<div id="loginScreen" style="display: flex; flex-direction: column; align-items: center;">
+    <h1>دخول الإدارة</h1>
     <input type="password" id="passInput" placeholder="أدخل كلمة السر">
-    <button class="btn-add" onclick="checkPassword()">دخول</button>
+    <button class="btn-green" onclick="checkPassword()">دخول</button>
 </div>
 
-<div id="rankModal">
-    <div class="modal-content">
-        <h3>اختر الرتبة الجديدة</h3>
-        <select id="selectNewRank"></select><br><br>
-        <button class="btn-add" onclick="confirmRankChange()">تحديث الرتبة</button>
-        <button class="btn-del" onclick="closeModal()">إلغاء</button>
-    </div>
-</div>
-
+<!-- اللوحة الرئيسية -->
 <div id="mainContent" class="box" style="display: none;">
-    <img id="logoImg" src="https://via.placeholder.com/100" alt="Logo">
-    <h1 id="mainTitle">لوحة تحكم العصابة</h1>
-    
-    <h3>إدارة النقاط والمقابلات</h3>
-    <input type="text" id="targetId" placeholder="ID العضو">
-    <input type="number" id="pointInput" placeholder="القيمة">
-    <br>
-    <button class="btn-add" onclick="changePoints(true)">+ نقاط</button>
-    <button class="btn-sub" onclick="changePoints(false)">- نقاط</button>
-    <button class="btn-add" onclick="changeInterviews(true)">+ مقابلة</button>
-    <button class="btn-sub" onclick="changeInterviews(false)">- مقابلة</button>
-    
+    <h1>لوحة التحكم</h1>
+
+    <!-- قسم إضافة مسؤولين -->
+    <div style="border-bottom: 1px solid #30363d; padding-bottom: 20px;">
+        <h3>إضافة مسؤول جديد</h3>
+        <input type="text" id="adminName" placeholder="اسم المسؤول">
+        <input type="text" id="adminId" placeholder="ID المسؤول">
+        <button class="btn-green" onclick="addAdmin()">إضافة مسؤول</button>
+    </div>
+
+    <!-- قسم إضافة ونقص النقاط -->
+    <div style="padding-top: 20px;">
+        <h3>إدارة النقاط</h3>
+        <input type="text" id="targetId" placeholder="ID العضو">
+        <input type="number" id="pointAmount" placeholder="عدد النقاط">
+        <br>
+        <button class="btn-green" onclick="updatePoints(true)">إضافة نقاط</button>
+        <button class="btn-red" onclick="updatePoints(false)">خصم نقاط</button>
+    </div>
+
     <div id="displayArea"></div>
 </div>
 
 <script>
-    const WEBHOOKS = { points: "https://discord.com/api/webhooks/1517472882962206722/BDkDPb4x4s-pedBzO0cE8DleLXIbihMC81H5NeF_Wx-B8rkZueYXyGwDroHaLeOvXT_N" };
+    let admins = JSON.parse(localStorage.getItem('gangAdmins')) || { "1": "المالك (Joud)" };
     let members = JSON.parse(localStorage.getItem('gangData')) || {};
 
     function checkPassword() {
         if (document.getElementById('passInput').value === "ابو العبد") {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('mainContent').style.display = 'block';
-            showAll();
+            showTable();
         } else { alert("كلمة السر خاطئة!"); }
     }
 
-    function sendToDiscord(title, msg) {
-        fetch(WEBHOOKS.points, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: `**${title}**\n${msg}` }) }).catch(err => console.log(err));
-    }
-
-    function changePoints(isAdd) {
-        const id = document.getElementById('targetId').value;
-        const pts = parseInt(document.getElementById('pointInput').value) || 0;
-        if(members[id]) {
-            isAdd ? members[id].points += pts : members[id].points -= pts;
-            localStorage.setItem('gangData', JSON.stringify(members));
-            sendToDiscord("تحديث・النقاط「💎」", `تم ${isAdd ? 'إضافة' : 'خصم'} ${pts} نقطة لـ ${members[id].name}`);
-            showAll();
+    function addAdmin() {
+        const name = document.getElementById('adminName').value;
+        const id = document.getElementById('adminId').value;
+        if(name && id) {
+            admins[id] = name;
+            localStorage.setItem('gangAdmins', JSON.stringify(admins));
+            alert("تم إضافة المسؤول بنجاح!");
         }
     }
 
-    function changeInterviews(isAdd) {
+    function updatePoints(isAdd) {
         const id = document.getElementById('targetId').value;
+        const amount = parseInt(document.getElementById('pointAmount').value) || 0;
         if(members[id]) {
-            isAdd ? members[id].interviews++ : members[id].interviews--;
-            localStorage.setItem('gangData', JSON.stringify(members));
-            sendToDiscord("تحديث・النقاط「💎」", `تم ${isAdd ? 'إضافة' : 'خصم'} مقابلة لـ ${members[id].name}`);
-            showAll();
+            isAdd ? members[id].points += amount : members[id].points -= amount;
+        } else {
+            members[id] = { name: "عضو جديد", points: amount };
         }
+        localStorage.setItem('gangData', JSON.stringify(members));
+        showTable();
     }
 
-    function showAll() {
-        let html = "<table><tr><th>ID</th><th>الاسم</th><th>النقاط</th><th>المقابلات</th></tr>";
+    function showTable() {
+        let html = "<table><tr><th>ID</th><th>الاسم</th><th>النقاط</th></tr>";
         for (let id in members) {
-            html += `<tr><td>${id}</td><td>${members[id].name}</td><td>${members[id].points}</td><td>${members[id].interviews}</td></tr>`;
+            html += `<tr><td>${id}</td><td>${members[id].name}</td><td>${members[id].points}</td></tr>`;
         }
         document.getElementById('displayArea').innerHTML = html + "</table>";
     }
