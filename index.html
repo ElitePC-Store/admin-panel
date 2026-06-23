@@ -2,30 +2,30 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>لوحة التحكم الإدارية</title>
+    <title>لوحة تحكم Blackout</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #0b0e14; color: #e0e0e0; text-align: center; padding: 20px; }
         .box { background: #161b22; padding: 20px; border-radius: 15px; width: 95%; margin: auto; border: 1px solid #30363d; }
-        input { padding: 10px; margin: 5px; width: 180px; border-radius: 5px; border: 1px solid #30363d; background: #0d1117; color: white; }
+        input { padding: 10px; margin: 5px; width: 160px; border-radius: 5px; border: 1px solid #30363d; background: #0d1117; color: white; }
         button { padding: 10px 20px; color: white; border: none; cursor: pointer; border-radius: 5px; margin: 5px; }
         .btn-green { background: #238636; }
         .btn-red { background: #b62323; }
         table { width: 100%; margin-top: 20px; border-collapse: collapse; }
-        td, th { border: 1px solid #30363d; padding: 10px; }
+        td, th { border: 1px solid #30363d; padding: 12px; }
     </style>
 </head>
 <body>
 
 <div id="loginScreen" style="display: flex; flex-direction: column; align-items: center;">
-    <h1>دخول الإدارة</h1>
-    <input type="password" id="passInput" placeholder="أدخل كلمة السر">
+    <h1>تسجيل دخول الإدارة</h1>
+    <input type="password" id="passInput" placeholder="كلمة السر">
     <button class="btn-green" onclick="checkPassword()">دخول</button>
 </div>
 
 <div id="mainContent" class="box" style="display: none;">
-    <h1>لوحة تحكم المسؤولين</h1>
+    <h1>لوحة تحكم Blackout</h1>
 
-    <div>
+    <div style="border-bottom: 1px solid #30363d; padding-bottom: 20px;">
         <h3>إضافة مسؤول جديد</h3>
         <input type="text" id="adminName" placeholder="اسم المسؤول">
         <input type="text" id="adminId" placeholder="ID المسؤول">
@@ -33,10 +33,11 @@
         <button class="btn-green" onclick="addAdmin()">إضافة مسؤول</button>
     </div>
 
-    <div>
-        <h3>إدارة النقاط</h3>
-        <input type="text" id="targetId" placeholder="ID العضو">
-        <input type="number" id="pointAmount" placeholder="العدد">
+    <div style="padding-top: 20px;">
+        <h3>إدارة نقاط الأعضاء</h3>
+        <input type="text" id="memberId" placeholder="ID العضو">
+        <input type="text" id="memberName" placeholder="اسم العضو">
+        <input type="number" id="pointAmount" placeholder="عدد النقاط">
         <br>
         <button class="btn-green" onclick="updatePoints(true)">إضافة نقاط</button>
         <button class="btn-red" onclick="updatePoints(false)">خصم نقاط</button>
@@ -53,38 +54,41 @@
         if (document.getElementById('passInput').value === "ابو العبد") {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('mainContent').style.display = 'block';
-            showTable();
+            showTables();
         } else { alert("كلمة السر خاطئة!"); }
     }
 
     function addAdmin() {
         const name = document.getElementById('adminName').value;
         const id = document.getElementById('adminId').value;
-        const ranksInput = document.getElementById('adminRanks').value;
-        if(name && id && ranksInput) {
-            admins[id] = { name: name, ranks: ranksInput.split(',') };
+        const ranks = document.getElementById('adminRanks').value;
+        if(name && id && ranks) {
+            admins[id] = { name: name, ranks: ranks.split(',') };
             localStorage.setItem('gangAdmins', JSON.stringify(admins));
-            alert("تم إضافة المسؤول ورتبه بنجاح!");
-            showTable();
+            showTables();
         }
     }
 
     function updatePoints(isAdd) {
-        const id = document.getElementById('targetId').value;
-        const amount = parseInt(document.getElementById('pointAmount').value) || 0;
-        if(members[id]) {
-            isAdd ? members[id].points += amount : members[id].points -= amount;
-        } else {
-            members[id] = { name: "عضو", points: amount };
-        }
+        const id = document.getElementById('memberId').value;
+        const name = document.getElementById('memberName').value;
+        const points = parseInt(document.getElementById('pointAmount').value) || 0;
+        
+        if(!members[id]) members[id] = { name: name, points: 0 };
+        
+        isAdd ? members[id].points += points : members[id].points -= points;
         localStorage.setItem('gangData', JSON.stringify(members));
-        showTable();
+        showTables();
     }
 
-    function showTable() {
-        let html = "<table><tr><th>ID المسؤول</th><th>الاسم</th><th>الرتب</th></tr>";
+    function showTables() {
+        let html = "<h3>المسؤولون</h3><table><tr><th>ID</th><th>الاسم</th><th>الرتب</th></tr>";
         for (let id in admins) {
-            html += `<tr><td>${id}</td><td>${admins[id].name}</td><td>${admins[id].ranks.join(' - ')}</td></tr>`;
+            html += `<tr><td>${id}</td><td>${admins[id].name}</td><td>${admins[id].ranks.join('، ')}</td></tr>`;
+        }
+        html += "</table><h3>الأعضاء</h3><table><tr><th>ID</th><th>الاسم</th><th>النقاط</th></tr>";
+        for (let id in members) {
+            html += `<tr><td>${id}</td><td>${members[id].name}</td><td>${members[id].points}</td></tr>`;
         }
         document.getElementById('displayArea').innerHTML = html + "</table>";
     }
